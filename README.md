@@ -4,7 +4,14 @@ Autonomous Developer Workflow (ADW) orchestration platform that combines determi
 
 ## Architecture
 
-| Layer | What it does |
+This repo has two distinct layers:
+
+- **AGENTIC LAYER** (root) — the system that builds the system. Contains all orchestration, Claude commands, skills, hooks, agents, specs, and tooling.
+- **APP LAYER** (`apps/{APP}`) — artifacts produced by the agentic layer. Each app is an independent deliverable with its own git repository.
+
+### Agentic Layer — Root
+
+| Directory | What it does |
 |---|---|
 | `adws/` | Python orchestration — spawns Claude agents through phases (plan → build → test → review → document → ship) with persistent state per workflow |
 | `.claude/commands/` | 30+ slash command templates that Claude executes (`/feature`, `/implement`, `/review`, `/test`, etc.) |
@@ -14,6 +21,14 @@ Autonomous Developer Workflow (ADW) orchestration platform that combines determi
 | `.claude/agents/` | 14 specialized sub-agent definitions (batch-fix, playwright-validator, build-agent, etc.) |
 | `mcp/` | Model Context Protocol configs for Playwright, React Spectrum, AEM, etc. |
 | `scripts/` | Shell utilities for port checking, worktree cleanup, PR management |
+
+### App Layer — `apps/{APP}`
+
+Apps are the deliverables generated and managed by the agentic layer. Each app lives under `apps/` and is intended to be its own independent git repository — separate from this harness. To add an MCP tool at the project level for an app:
+
+```bash
+claude mcp add ./mcp/<config>.json
+```
 
 ## How ADW Works
 
