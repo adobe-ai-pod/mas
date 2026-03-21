@@ -230,7 +230,7 @@ Agents receive only the context passed to them at invocation time, which keeps t
 
 ---
 
-### meta-gentic-agent
+### meta-agentic-agent
 
 **Purpose:** Generates a new, complete Claude Code sub-agent configuration file from a user's natural-language description.
 
@@ -356,7 +356,7 @@ These agents produce plans or generate other agents.
 | Agent | Model | Primary Function |
 |-------|-------|-----------------|
 | `planner` | opus | Generates structured plans via the `/plan` slash command |
-| `meta-gentic-agent` | opus | Generates new sub-agent definition files |
+| `meta-agentic-agent` | opus | Generates new sub-agent definition files |
 
 ### Browser Automation and UI Testing
 

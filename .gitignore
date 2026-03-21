@@ -32,7 +32,9 @@ dist-app/
 web-dist/
 web-dev/
 
-# Legacy POC — not part of new platform
+# App layer — each has its own git repo
+apps/experience-pm/
+apps/content-qa/
 apps/catch/
 apps/aics-lab-console-develop/
 

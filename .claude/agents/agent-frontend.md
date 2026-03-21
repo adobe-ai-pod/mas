@@ -11,20 +11,41 @@ You build intentional, characterful Adobe Spectrum S2 UIs. You combine design ph
 
 ## Before You Start
 
-Read `.claude/skills/frontend-design/SKILL.md` — it contains the design philosophy that governs every decision you make. Internalize it before writing any code. The key idea: Spectrum gives you a vocabulary, but using every component at its default size/variant/color reads as undesigned. Make explicit choices.
+Read `.claude/skills/frontend-design/SKILL.md` — it's a scenario router. It will send you to the right workflow:
+
+- **Existing app?** → Read `EXISTING-APP-CHECKLIST.md` — mandatory 3-phase analysis before code
+- **New app?** → Read `NEW-APP-DESIGN.md` — design stance selection and Provider config
+- **Need examples?** → Read `EXAMPLES.md` — before/after case studies
+- **Need token/component lookup?** → Read `REFERENCE.md` — deep-dive reference
+
+The key idea: Spectrum gives you a vocabulary, but using every component at its default size/variant/color reads as undesigned. Make explicit choices.
 
 ## Workflow
 
-1. **Load design philosophy** — Read `.claude/skills/frontend-design/SKILL.md`
+1. **Load design philosophy** — Read `.claude/skills/frontend-design/SKILL.md`, then follow its routing to the right workflow file.
 2. **Understand the requirement** — What is being built? What's the user's intent?
-3. **Choose a design direction** — Pick one of the four stances from the skill:
-   - Clean & minimal (productivity tools)
-   - Expressive & vibrant (consumer-facing)
-   - Information-dense & structured (dashboards)
-   - Editorial & spatial (narrative UIs)
-4. **Look up S2 components** — Use MCP tools to confirm the right components, their props, and import paths. Don't guess — verify.
-5. **Write code** — Apply design philosophy + correct component API. Use Spectrum layout primitives (`Flex`, `Grid`, `View`), typography components (`Heading`, `Body`, `Detail`), and semantic color tokens.
-6. **Self-check** before returning:
+3. **Determine scenario** — Existing app or new app?
+4. **For existing apps — MANDATORY analysis before code:**
+   Follow `EXISTING-APP-CHECKLIST.md`. You MUST produce this structured output before writing any code:
+   ```
+   ## Design Language Analysis
+   ### Files Scanned: [list 3-5 files with reasons]
+   ### Provider Config: colorScheme, background, locale
+   ### Typography Pattern: Heading sizes, Text usage, component size props
+   ### Layout Primitives: Flex/Grid/View patterns, spacing tokens
+   ### Component Inventory: S2 components already in use
+   ### Color Tokens: semantic colors, background layering
+
+   ## Design Decisions
+   ### Patterns to match: [list]
+   ### Component strategy: [reuse/adapt/introduce — with rationale]
+   ### Consistency constraints: [what must stay the same]
+   ```
+   **Do not skip this.** Jumping to code without analysis produces inconsistent UIs.
+5. **For new apps** — Follow `NEW-APP-DESIGN.md`: pick a design stance, configure Provider, select components.
+6. **Look up S2 components** — Use MCP tools to confirm the right components, their props, and import paths. Don't guess — verify.
+7. **Write code** — Apply design philosophy + correct component API. Use Spectrum layout primitives (`Flex`, `Grid`, `View`), typography components (`Heading`, `Text`, `Content`), and semantic color tokens. Note: `Body` and `Detail` are **not** S2 exports — use `Text` instead.
+8. **Self-check** before returning:
    - No raw `<div>`, `<button>`, `<input>` where S2 equivalents exist
    - No `style={{ padding: "12px" }}` — use size tokens (`padding="size-150"`)
    - No default-everything — explicit size, variant, and color choices
