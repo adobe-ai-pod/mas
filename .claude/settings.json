@@ -159,6 +159,17 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/hooks/log_event.py --event-type SessionEnd"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
