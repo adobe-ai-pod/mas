@@ -42,6 +42,7 @@ apps/content-qa/
 apps/catch/
 apps/aics-lab-console-develop/
 apps/agent-orchestrator/
+apps/agent-observability/
 
 # OS
 .DS_Store
