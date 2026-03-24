@@ -565,4 +565,13 @@ def execute_template(request: AgentTemplateRequest) -> AgentPromptResponse:
     )
 
     # Execute with retry logic and return response (prompt_claude_code now handles all parsing)
-    return prompt_claude_code_with_retry(prompt_request)
+    response = prompt_claude_code_with_retry(prompt_request)
+
+    if response.session_id:
+        from .state import ADWState
+        state = ADWState.load(request.adw_id)
+        if state:
+            state.append_session_id(response.session_id)
+            state.save(workflow_step=f"{request.agent_name}:{request.slash_command}")
+
+    return response
