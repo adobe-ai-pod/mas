@@ -22,21 +22,20 @@ build/
 .parcel-cache/
 
 # Logs
-logs/*
-!logs/.gitkeep
 *.log
 npm-debug.log*
+logs/*
+!logs/.gitkeep
+.logs/
 
 # App Builder
 dist-app/
 web-dist/
 web-dev/
 
-# App layer — each has its own git repo
-apps/experience-pm/
-apps/content-qa/
-apps/catch/
-apps/aics-lab-console-develop/
+# App layer — each app has its own git repo
+apps/*
+!apps/.gitkeep
 
 # OS
 .DS_Store
@@ -76,4 +75,3 @@ adws/.env.adw
 .ports.env
 **/__pycache__/
 *.pyc
-apps/spectrum-init
