@@ -122,7 +122,7 @@ export class Plans extends VariantLayout {
             bodyPlaceholder.classList.add('slot-placeholder');
             if (!slotInFooter) {
                 const slotInBodyClone = slotInBody.cloneNode(true);
-                footer.prepend(slotInBodyClone);
+                footer?.prepend(slotInBodyClone);
             }
             slotInBody.replaceWith(bodyPlaceholder);
         }
@@ -347,7 +347,6 @@ export class Plans extends VariantLayout {
                 <slot name="addon"></slot>
                 <slot name="badge"></slot>
             </div>
-            ${this.secureLabelFooter}
             <slot></slot>`;
     }
 
@@ -414,16 +413,7 @@ export class Plans extends VariantLayout {
             padding-top: 8px;
         }
 
-        :host([variant^='plans']) footer ::slotted([slot='addon']) {
-            margin: 0;
-            padding: 0;
-        }
-
-        :host([variant='plans']) .wide-footer #stock-checkbox {
-            margin-top: 0;
-        }
-
-        :host([variant='plans']) #stock-checkbox {
+:host([variant='plans']) #stock-checkbox {
             margin-top: 8px;
             gap: 9px;
             color: rgb(34, 34, 34);
@@ -438,12 +428,7 @@ export class Plans extends VariantLayout {
             height: 12px;
         }
 
-        :host([variant^='plans']) footer {
-            padding: var(--merch-card-plans-padding);
-            padding-top: 1px;
-        }
-
-        :host([variant='plans']) .secure-transaction-label {
+:host([variant='plans']) .secure-transaction-label {
             color: rgb(80, 80, 80);
             line-height: var(--consonant-merch-card-detail-xs-line-height);
         }
