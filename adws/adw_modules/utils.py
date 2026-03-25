@@ -246,6 +246,9 @@ def get_safe_subprocess_env() -> Dict[str, str]:
         # ADW multi-repo support — APP env var drives app config resolution
         "APP": os.getenv("APP"),
 
+        # Slack thread context — set by trigger_slack.py so ADW notifications land in the origin thread
+        "SLACK_THREAD_TS": os.getenv("SLACK_THREAD_TS"),
+
         # Working directory tracking
         "PWD": os.getcwd(),
     }

@@ -30,6 +30,8 @@ CLAUDE_PATH = os.getenv("CLAUDE_CODE_PATH", "claude")
 SLASH_COMMAND_MODEL_MAP: Final[Dict[SlashCommand, Dict[ModelSet, str]]] = {
     "/classify_issue": {"base": "sonnet", "heavy": "sonnet"},
     "/classify_adw": {"base": "sonnet", "heavy": "sonnet"},
+    "/parse_slack_intent": {"base": "sonnet", "heavy": "sonnet"},
+    "/prompt-optimizer": {"base": "opus", "heavy": "opus"},
     "/generate_branch_name": {"base": "sonnet", "heavy": "sonnet"},
     "/implement": {"base": "sonnet", "heavy": "opus"},
     "/test": {"base": "sonnet", "heavy": "sonnet"},

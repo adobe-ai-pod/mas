@@ -79,3 +79,4 @@ adws/.env.adw
 **/__pycache__/
 *.pyc
 
+.claude/settings.local.json

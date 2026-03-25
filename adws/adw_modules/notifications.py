@@ -34,6 +34,7 @@ are "nice to have" and never break workflows.
 """
 
 import logging
+import os
 from typing import Optional, Dict, Any, Tuple, TYPE_CHECKING
 from dataclasses import dataclass
 
@@ -271,11 +272,21 @@ def notify_workflow_start(issue_id: str, adw_id: str, issue_title: str = "",
         logger.warning(f"Failed to send GitHub workflow start notification: {e}")
 
     try:
-        # Slack: Create thread for workflow
-        thread_ts = create_workflow_thread(
-            issue_id, adw_id, issue_title, issue_command, github_url
-        )
-        slack_success = bool(thread_ts)
+        # If triggered from Slack, reuse the origin thread instead of creating a new one
+        existing_thread_ts = os.getenv("SLACK_THREAD_TS", "")
+        if existing_thread_ts:
+            # Reply to the originating Slack thread — no new top-level message
+            success, thread_ts = slack_workflow_start(
+                int(issue_id), adw_id,
+                issue_title=issue_title, issue_command=issue_command,
+                github_url=github_url, thread_ts=existing_thread_ts
+            )
+            slack_success = success
+        else:
+            thread_ts = create_workflow_thread(
+                issue_id, adw_id, issue_title, issue_command, github_url
+            )
+            slack_success = bool(thread_ts)
 
         # Save thread_ts to state
         if thread_ts and state:
