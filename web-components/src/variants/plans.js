@@ -346,8 +346,8 @@ export class Plans extends VariantLayout {
                 ${this.stockCheckbox}
                 <slot name="addon"></slot>
                 <slot name="badge"></slot>
+                <slot name="footer"></slot>
             </div>
-            ${this.secureLabelFooter}
             <slot></slot>`;
     }
 
@@ -414,15 +414,6 @@ export class Plans extends VariantLayout {
             padding-top: 8px;
         }
 
-        :host([variant^='plans']) footer ::slotted([slot='addon']) {
-            margin: 0;
-            padding: 0;
-        }
-
-        :host([variant='plans']) .wide-footer #stock-checkbox {
-            margin-top: 0;
-        }
-
         :host([variant='plans']) #stock-checkbox {
             margin-top: 8px;
             gap: 9px;
@@ -436,11 +427,6 @@ export class Plans extends VariantLayout {
             border: 2px solid rgb(109, 109, 109);
             width: 12px;
             height: 12px;
-        }
-
-        :host([variant^='plans']) footer {
-            padding: var(--merch-card-plans-padding);
-            padding-top: 1px;
         }
 
         :host([variant='plans']) .secure-transaction-label {
