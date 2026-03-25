@@ -224,15 +224,6 @@ merch-card[variant^="plans"] merch-addon {
     --merch-addon-label-line-height: normal;
 }
 
-merch-card[variant^="plans"] [slot="footer"] a {
-    line-height: 19px;
-    padding: 3px 16px 4px;
-}
-
-merch-card[variant^="plans"] [slot="footer"] .con-button > span {
-    min-width: unset;
-}
-
 merch-card[variant^="plans"] merch-addon span[data-template="price"] {
     display: none;
 }
