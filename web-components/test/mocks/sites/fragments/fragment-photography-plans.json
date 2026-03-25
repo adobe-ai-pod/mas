@@ -39,7 +39,7 @@
         },
         "showStockCheckbox": true,
         "ctas": {
-            "value": "<p><a is=\"checkout-link\" data-wcs-osi=\"abm\" data-template=\"checkoutUrl\" data-analytics-id=\"buy-now\">Buy now</a></p>",
+            "value": "",
             "mimeType": "text/html"
         },
         "tags": [],

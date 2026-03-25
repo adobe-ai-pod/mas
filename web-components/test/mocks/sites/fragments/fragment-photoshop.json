@@ -19,7 +19,7 @@
             "mimeType": "text/html"
         },
         "ctas": {
-            "value": "<p><strong><a is=\"checkout-link\" data-checkout-workflow=\"UCv3\" data-checkout-workflow-step=\"email\" data-promotion-code=\"\" data-quantity=\"1\" data-wcs-osi=\"Mutn1LYoGojkrcMdCLO7LQlx1FyTHw27ETsfLv0h8DQ\" href=\"\">Buy now</a></strong></p>",
+            "value": "",
             "mimeType": "text/html"
         },
         "stockOffer": { "mimeType": "text/html" },
