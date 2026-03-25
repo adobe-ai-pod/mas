@@ -83,7 +83,10 @@ const searcher = (elements, { search }) => {
     if (search?.length) {
         search = search.toLowerCase();
         return elements.filter((element) => {
-            const haystack = (element.title ?? '').toLowerCase();
+            const haystack = [element.title, element.description]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
             return haystack.includes(search);
         });
     }
