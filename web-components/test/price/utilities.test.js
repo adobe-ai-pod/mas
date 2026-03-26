@@ -4,6 +4,7 @@ import {
     formatAnnualPrice,
     formatOpticalPrice,
     isPromotionActive,
+    getPromotionUpsellMessage,
 } from '../../src/price/utilities.js';
 import { Commitment, Term } from '../../src/constants.js';
 
@@ -310,6 +311,93 @@ describe('isPromotionActive', () => {
             end: null,
         };
         expect(isPromotionActive(invalidPromotion)).to.equal(false);
+    });
+});
+
+describe('getPromotionUpsellMessage', () => {
+    const basePromotion = {
+        displaySummary: {
+            amount: 20,
+            minProductQuantity: 3,
+            outcomeType: 'PERCENTAGE_DISCOUNT',
+        },
+    };
+
+    it('returns null when promotion is null', () => {
+        expect(getPromotionUpsellMessage(null, 1)).to.equal(null);
+    });
+
+    it('returns null when promotion is undefined', () => {
+        expect(getPromotionUpsellMessage(undefined, 1)).to.equal(null);
+    });
+
+    it('returns null when quantity meets minProductQuantity', () => {
+        expect(getPromotionUpsellMessage(basePromotion, 3)).to.equal(null);
+    });
+
+    it('returns null when quantity exceeds minProductQuantity', () => {
+        expect(getPromotionUpsellMessage(basePromotion, 5)).to.equal(null);
+    });
+
+    it('returns upsell message for PERCENTAGE_DISCOUNT when quantity is below threshold', () => {
+        expect(getPromotionUpsellMessage(basePromotion, 1)).to.equal(
+            'Add 2 more licenses to unlock 20% off',
+        );
+    });
+
+    it('uses singular "license" when delta is 1', () => {
+        expect(getPromotionUpsellMessage(basePromotion, 2)).to.equal(
+            'Add 1 more license to unlock 20% off',
+        );
+    });
+
+    it('returns upsell message for FIXED_DISCOUNT outcomeType', () => {
+        const fixedPromotion = {
+            displaySummary: {
+                amount: 10,
+                minProductQuantity: 3,
+                outcomeType: 'FIXED_DISCOUNT',
+            },
+        };
+        expect(getPromotionUpsellMessage(fixedPromotion, 1)).to.equal(
+            'Add 2 more licenses to unlock 10 off',
+        );
+    });
+
+    it('returns null when amount is missing', () => {
+        const noAmount = {
+            displaySummary: {
+                minProductQuantity: 3,
+                outcomeType: 'PERCENTAGE_DISCOUNT',
+            },
+        };
+        expect(getPromotionUpsellMessage(noAmount, 1)).to.equal(null);
+    });
+
+    it('returns null when outcomeType is missing', () => {
+        const noOutcomeType = {
+            displaySummary: {
+                amount: 20,
+                minProductQuantity: 3,
+            },
+        };
+        expect(getPromotionUpsellMessage(noOutcomeType, 1)).to.equal(null);
+    });
+
+    it('returns null when no minProductQuantity (defaults to 1) and quantity >= 1', () => {
+        const noMinQty = {
+            displaySummary: {
+                amount: 20,
+                outcomeType: 'PERCENTAGE_DISCOUNT',
+            },
+        };
+        expect(getPromotionUpsellMessage(noMinQty, 1)).to.equal(null);
+    });
+
+    it('uses default quantity of 1 when not provided', () => {
+        expect(getPromotionUpsellMessage(basePromotion)).to.equal(
+            'Add 2 more licenses to unlock 20% off',
+        );
     });
 });
 

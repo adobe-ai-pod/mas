@@ -1,6 +1,7 @@
 import { STATE_FAILED, FF_DEFAULTS, FF_ANNUAL_PRICE } from './constants.js';
 import { createMasElement, MasElement } from './mas-element.js';
 import { selectOffers, sumOffers, getService } from './utilities.js';
+import { getPromotionUpsellMessage } from './price/utilities.js';
 import { Defaults } from './defaults.js';
 
 const INDIVIDUAL = 'INDIVIDUAL_COM';
@@ -414,6 +415,10 @@ export class InlinePrice extends HTMLSpanElement {
                 options.displayAnnual = true;
             }
 
+            const qty = Array.isArray(options.quantity)
+                ? options.quantity[0]
+                : (options.quantity ?? 1);
+
             // Dual-OSI discount: use individual prices for cross-offer percentage
             if (options.template === 'discount' && offers.length === 2) {
                 const [discountedOffer, referenceOffer] = offers;
@@ -425,11 +430,29 @@ export class InlinePrice extends HTMLSpanElement {
                             referenceOffer.priceDetails?.price,
                     },
                 };
+                const upsellMsg = getPromotionUpsellMessage(
+                    discountedOffer?.promotion ?? offer?.promotion,
+                    qty,
+                );
+                if (upsellMsg) {
+                    this.dataset.promotionUpsell = upsellMsg;
+                } else {
+                    delete this.dataset.promotionUpsell;
+                }
                 return this.renderOffers([crossOffer], options, version);
             }
 
             // Sum the final offers for rendering
             const finalOffer = sumOffers(offers);
+            const upsellMsg = getPromotionUpsellMessage(
+                finalOffer?.promotion ?? offer?.promotion,
+                qty,
+            );
+            if (upsellMsg) {
+                this.dataset.promotionUpsell = upsellMsg;
+            } else {
+                delete this.dataset.promotionUpsell;
+            }
             return this.renderOffers([finalOffer], options, version);
         } catch (error) {
             this.innerHTML = '';

@@ -30,6 +30,7 @@ import {
     EVENT_MERCH_ADDON_AND_QUANTITY_UPDATE,
     EVENT_MERCH_CARD_QUANTITY_CHANGE,
     FF_DEFAULTS,
+    EVENT_TYPE_RESOLVED,
 } from './constants.js';
 import { VariantLayout } from './variants/variant-layout.js';
 import { hydrate, ANALYTICS_SECTION_ATTR } from './hydrate.js';
@@ -218,6 +219,7 @@ export class MerchCard extends LitElement {
     #hydrationPromise = new Promise((resolve) => {
         this.#resolveHydration = resolve;
     });
+    #handleMasResolved = () => this.#updatePromotionUpsell();
 
     customerSegment;
     marketSegment;
@@ -569,6 +571,7 @@ export class MerchCard extends LitElement {
         this.addEventListener(EVENT_AEM_LOAD, this.handleAemFragmentEvents);
         this.addEventListener(EVENT_MAS_READY, this.handleInfoIconEvents);
         this.addEventListener('change', this.changeHandler);
+        this.addEventListener(EVENT_TYPE_RESOLVED, this.#handleMasResolved);
 
         if (this.variantLayout) {
             this.variantLayout.connectedCallbackHook();
@@ -591,6 +594,7 @@ export class MerchCard extends LitElement {
         this.removeEventListener(EVENT_AEM_LOAD, this.handleAemFragmentEvents);
         this.removeEventListener(EVENT_MAS_READY, this.handleInfoIconEvents);
         this.removeEventListener('change', this.changeHandler);
+        this.removeEventListener(EVENT_TYPE_RESOLVED, this.#handleMasResolved);
         this.removeEventListener(
             EVENT_MERCH_ADDON_AND_QUANTITY_UPDATE,
             this.handleAddonAndQuantityUpdate,
@@ -622,6 +626,25 @@ export class MerchCard extends LitElement {
                 }
                 this.checkReady();
             }
+        }
+    }
+
+    #updatePromotionUpsell() {
+        const inlinePrice = this.querySelector(
+            `${SELECTOR_MAS_INLINE_PRICE}[data-promotion-upsell]`,
+        );
+        let upsellSpan = this.querySelector('span.promotion-upsell');
+        const message = inlinePrice?.dataset?.promotionUpsell;
+        if (message) {
+            if (!upsellSpan) {
+                upsellSpan = document.createElement('span');
+                upsellSpan.className = 'promotion-upsell';
+                upsellSpan.setAttribute('slot', 'promo-text');
+                this.appendChild(upsellSpan);
+            }
+            upsellSpan.textContent = message;
+        } else if (upsellSpan) {
+            upsellSpan.remove();
         }
     }
 
