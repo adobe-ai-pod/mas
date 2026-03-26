@@ -1007,6 +1007,33 @@ export class MasRepository extends LitElement {
     }
 
     /**
+     * Returns a title that is unique within the given parent folder path.
+     * If `baseTitle` is already taken, appends -1, -2, ... until a free slot is found.
+     * @param {string} baseTitle
+     * @param {string} parentPath  - DAM folder path, e.g. /content/dam/mas/nala/en_US
+     * @returns {Promise<string>}
+     */
+    async generateUniqueFragmentTitle(baseTitle, parentPath) {
+        const existingTitles = new Set();
+        const searchGen = this.aem.sites.cf.fragments.search({ path: parentPath });
+        for await (const batch of searchGen) {
+            for await (const item of batch) {
+                existingTitles.add(item.title);
+            }
+        }
+
+        if (!existingTitles.has(baseTitle)) return baseTitle;
+
+        let suffix = 1;
+        while (suffix <= 100) {
+            const candidate = `${baseTitle}-${suffix}`;
+            if (!existingTitles.has(candidate)) return candidate;
+            suffix++;
+        }
+        throw new Error(`Cannot generate unique fragment title after 100 attempts`);
+    }
+
+    /**
      * @returns {Promise<boolean>} Whether or not it was successful
      */
     async copyFragment(updatedTitle, osi, tags = []) {
@@ -1014,15 +1041,14 @@ export class MasRepository extends LitElement {
             this.operation.set(OPERATIONS.CLONE);
             const result = await this.aem.sites.cf.fragments.copy(this.fragmentInEdit);
             let savedResult = result;
-            const needsSave = (updatedTitle && updatedTitle !== result.title) || osi;
+            const desiredTitle = updatedTitle || result.title;
+            const parentPath = result.path.split('/').slice(0, -1).join('/');
+            const uniqueTitle = await this.generateUniqueFragmentTitle(desiredTitle, parentPath);
+            const needsSave = uniqueTitle !== result.title || osi;
             if (needsSave) {
-                if (updatedTitle && updatedTitle !== result.title) {
-                    result.title = updatedTitle;
-                }
+                result.title = uniqueTitle;
                 result.fields.forEach((field) => {
-                    if (osi && field.name === 'osi') {
-                        field.values = [osi];
-                    }
+                    if (osi && field.name === 'osi') field.values = [osi];
                 });
                 savedResult = await this.aem.sites.cf.fragments.save(result);
             }

@@ -622,6 +622,7 @@ export default class EditorPanel extends LitElement {
             const confirmed = await this.promptDiscardChanges();
             if (!confirmed) return;
         }
+        this.titleClone = this.fragment.title;
         this.showCloneDialog = true;
         Store.showCloneDialog.set(true);
     }

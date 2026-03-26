@@ -1491,6 +1491,74 @@ describe('MasRepository dictionary helpers', () => {
         });
     });
 
+    describe('copyFragment', () => {
+        const makeSearchStub = (sandbox, titles) => {
+            // Returns an async generator that yields one batch of items
+            const batch = titles.map((title) => ({ title }));
+            async function* searchGen() {
+                yield (async function* () {
+                    for (const item of batch) yield item;
+                })();
+            }
+            return sandbox.stub().returns(searchGen());
+        };
+
+        it('no duplicate — title returned unchanged when not present in folder', async () => {
+            const repository = createRepository();
+            repository.aem = createAemMock({
+                fragments: {
+                    search: makeSearchStub(sandbox, ['Other Card']),
+                },
+            });
+            const unique = await repository.generateUniqueFragmentTitle('My Card', '/content/dam/mas/nala/en_US');
+            expect(unique).to.equal('My Card');
+        });
+
+        it('duplicate exists — returns title-1', async () => {
+            const repository = createRepository();
+            repository.aem = createAemMock({
+                fragments: {
+                    search: makeSearchStub(sandbox, ['My Card']),
+                },
+            });
+            const unique = await repository.generateUniqueFragmentTitle('My Card', '/content/dam/mas/nala/en_US');
+            expect(unique).to.equal('My Card-1');
+        });
+
+        it('duplicate with -1 also exists — returns title-2', async () => {
+            const repository = createRepository();
+            repository.aem = createAemMock({
+                fragments: {
+                    search: makeSearchStub(sandbox, ['My Card', 'My Card-1']),
+                },
+            });
+            const unique = await repository.generateUniqueFragmentTitle('My Card', '/content/dam/mas/nala/en_US');
+            expect(unique).to.equal('My Card-2');
+        });
+
+        it('user-provided title that is unique — used as-is', async () => {
+            const repository = createRepository();
+            repository.aem = createAemMock({
+                fragments: {
+                    search: makeSearchStub(sandbox, ['Original Card']),
+                },
+            });
+            const unique = await repository.generateUniqueFragmentTitle('Brand New Title', '/content/dam/mas/nala/en_US');
+            expect(unique).to.equal('Brand New Title');
+        });
+
+        it('user-provided title that is a duplicate — suffixed', async () => {
+            const repository = createRepository();
+            repository.aem = createAemMock({
+                fragments: {
+                    search: makeSearchStub(sandbox, ['Brand New Title']),
+                },
+            });
+            const unique = await repository.generateUniqueFragmentTitle('Brand New Title', '/content/dam/mas/nala/en_US');
+            expect(unique).to.equal('Brand New Title-1');
+        });
+    });
+
     describe('deleteFragment', () => {
         it('refreshes referencing list stores after deletion to prevent stale variation rows', async () => {
             const repository = createRepository();
