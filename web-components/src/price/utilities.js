@@ -58,6 +58,25 @@ const isPromotionActive = (promotion, instant, quantity = 1) => {
     return now >= startDate && now <= endDate;
 };
 
+const getPromotionUpsellMessage = (promotion, quantity = 1) => {
+    if (!promotion) return null;
+    const {
+        displaySummary: {
+            amount,
+            minProductQuantity = 1,
+            outcomeType,
+        } = {},
+    } = promotion;
+    if (!amount || !outcomeType) return null;
+    if (quantity >= minProductQuantity) return null;
+    const delta = minProductQuantity - quantity;
+    const discount =
+        outcomeType === 'PERCENTAGE_DISCOUNT'
+            ? `${amount}% off`
+            : `${amount} off`;
+    return `Add ${delta} more license${delta !== 1 ? 's' : ''} to unlock ${discount}`;
+};
+
 // TODO: @pandora/react-price does not have "module" field in package.json and is bundled entirely by Webpack
 const RecurrenceTerm = {
     MONTH: 'MONTH',
@@ -369,4 +388,5 @@ export {
     formatAnnualPrice,
     makeSpacesAroundNonBreaking,
     isPromotionActive,
+    getPromotionUpsellMessage,
 };
