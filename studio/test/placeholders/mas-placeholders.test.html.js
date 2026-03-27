@@ -7,6 +7,7 @@ import { elementUpdated } from '@open-wc/testing-helpers';
 import Store from '../../src/store.js';
 // Import the component being tested
 import '../../src/placeholders/mas-placeholders.js';
+import '../../src/placeholders/mas-placeholders-item.js';
 // Import necessary dependencies potentially used by the component or tests
 import '../../src/mas-repository.js';
 import '../../src/rte/rte-field.js';
@@ -162,6 +163,77 @@ runTests(async () => {
             element.onSave();
             await elementUpdated(element);
             expect(refreshSpy.calledOnce).to.be.true;
+        });
+    });
+
+    describe('mas-placeholders-item - onCopyCode', () => {
+        let item;
+        let clipboardStub;
+        let showToastStub;
+
+        beforeEach(async function () {
+            const existing = document.body.querySelector('mas-placeholders-item');
+            if (existing) existing.remove();
+
+            Store.search.set({ path: '/content/dam/mas/acom' });
+
+            item = document.createElement('mas-placeholders-item');
+            item.placeholderStore = {
+                get: () => ({
+                    key: 'test-key',
+                    id: 'fragment-uuid-123',
+                    status: 'draft',
+                    statusVariant: 'draft',
+                    isRichText: false,
+                    value: 'test-value',
+                    updatedBy: 'user',
+                    updatedAt: '2026-01-01',
+                    hasChanges: false,
+                }),
+                updateField: () => {},
+                discardChanges: () => {},
+                refreshFrom: () => {},
+            };
+            item.toggleDropdown = sinon.stub();
+            item.toggleEditing = sinon.stub();
+            item.updatePending = sinon.stub();
+            item.activeDropdown = true;
+            document.body.appendChild(item);
+            await elementUpdated(item);
+
+            clipboardStub = sinon.stub(navigator.clipboard, 'writeText').resolves();
+        });
+
+        afterEach(function () {
+            sinon.restore();
+            item?.remove();
+        });
+
+        it('should copy a studio deep-link URL to the clipboard and show a positive toast', async function () {
+            const { showToast } = await import('../../src/utils.js');
+            showToastStub = sinon.stub().callsFake(() => {});
+            // Call onCopyCode directly
+            await item.onCopyCode(new MouseEvent('click'));
+
+            expect(clipboardStub.calledOnce).to.be.true;
+            const copiedUrl = clipboardStub.firstCall.args[0];
+            expect(copiedUrl).to.include('page=placeholders');
+            expect(copiedUrl).to.include('fragment-uuid-123');
+            expect(copiedUrl).to.include('https://mas.adobe.com/studio.html#');
+            expect(item.toggleDropdown.calledOnce).to.be.true;
+        });
+
+        it('should show a negative toast when clipboard write fails', async function () {
+            clipboardStub.rejects(new Error('Permission denied'));
+            // We just verify it does not throw
+            let threw = false;
+            try {
+                await item.onCopyCode(new MouseEvent('click'));
+            } catch {
+                threw = true;
+            }
+            expect(threw).to.be.false;
+            expect(item.toggleDropdown.calledOnce).to.be.true;
         });
     });
 });

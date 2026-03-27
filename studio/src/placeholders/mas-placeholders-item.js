@@ -128,6 +128,21 @@ class MasPlaceholdersItem extends LitElement {
         this.placeholderStore.refreshFrom(updatedPlaceholder);
     }
 
+    async onCopyCode(event) {
+        this.toggleDropdown(this.placeholder.key, event);
+        const params = new URLSearchParams();
+        params.set('page', 'placeholders');
+        params.set('path', Store.search.get().path);
+        params.set('query', this.placeholder.id);
+        const url = `https://mas.adobe.com/studio.html#${params.toString()}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            showToast('Code copied to clipboard', 'positive');
+        } catch (e) {
+            showToast('Failed to copy code to clipboard', 'negative');
+        }
+    }
+
     preventSelection(event) {
         event.stopPropagation();
     }
@@ -287,6 +302,10 @@ class MasPlaceholdersItem extends LitElement {
                         ${this.activeDropdown
                             ? html`
                                   <div class="dropdown-menu">
+                                      <div class="dropdown-item" @click=${this.onCopyCode}>
+                                          <sp-icon-code size="m"></sp-icon-code>
+                                          <span>Copy Code</span>
+                                      </div>
                                       <div
                                           class="dropdown-item ${this.placeholder.status === STATUS_PUBLISHED
                                               ? 'disabled'
