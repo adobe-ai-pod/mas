@@ -223,12 +223,6 @@ class MasToolbar extends LitElement {
 
     get searchAndFilterControls() {
         return html`<div id="read">
-            <sp-action-button toggles label="Filter" class="filters-button ${this.filterCount > 0 ? 'shown' : ''}">
-                ${!this.filterCount > 0
-                    ? html`<sp-icon-filter slot="icon"></sp-icon-filter>`
-                    : html`<div slot="icon" class="filters-badge">${this.filterCount}</div>`}
-                Filter</sp-action-button
-            >
             <sp-search
                 label="Search"
                 placeholder="Search"
