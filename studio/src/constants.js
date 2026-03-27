@@ -207,6 +207,14 @@ export const SURFACES = {
         label: 'Sandbox',
         name: 'sandbox',
     },
+    ACOM_CC: {
+        label: 'Adobe.com CC',
+        name: 'acom-cc',
+    },
+    ACOM_DC: {
+        label: 'Adobe.com DC',
+        name: 'acom-dc',
+    },
 };
 
 export const QUICK_ACTION = {
@@ -241,7 +249,7 @@ export const TABLE_TYPE = {
     PLACEHOLDERS: 'placeholders',
 };
 
-export const TRANSLATIONS_ALLOWED_SURFACES = ['acom', 'express', 'sandbox', 'nala'];
+export const TRANSLATIONS_ALLOWED_SURFACES = ['acom', 'acom-cc', 'acom-dc', 'express', 'sandbox', 'nala'];
 
 /** Base URL for Odin preview fragment-by-path checks (e.g. fil_PH .json endpoint). */
 export const ODIN_PREVIEW_ORIGIN = 'https://odinpreview.corp.adobe.com';

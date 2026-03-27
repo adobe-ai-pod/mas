@@ -112,12 +112,24 @@ export const VARIANTS = [
     },
 ];
 
+const ACOM_DERIVED_SURFACES = new Set([SURFACES.ACOM_CC.name, SURFACES.ACOM_DC.name]);
+
+const ACOM_CC_DC_ALLOWED_VARIANTS = new Set([
+    VARIANT_NAMES.PRODUCT,
+    VARIANT_NAMES.SEGMENT,
+    VARIANT_NAMES.MINI_COMPARE_CHART,
+    VARIANT_NAMES.MINI_COMPARE_CHART_MWEB,
+    VARIANT_NAMES.IMAGE,
+    VARIANT_NAMES.SPECIAL_OFFERS,
+]);
+
 /** Flat tree-picker-compatible list of allowed variants, optionally filtered by surface. */
 export const getVariantTreeData = (surface) =>
     VARIANTS.filter((v) => {
         if (v.value === VARIANT_NAMES.ALL) return false;
         if (!surface) return true;
         if ([SURFACES.SANDBOX.name, SURFACES.NALA.name].includes(surface)) return true;
+        if (ACOM_DERIVED_SURFACES.has(surface)) return ACOM_CC_DC_ALLOWED_VARIANTS.has(v.value);
         return v.surface === surface;
     }).map((v) => ({
         name: v.value,

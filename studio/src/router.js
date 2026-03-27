@@ -1,7 +1,7 @@
 import { PAGE_NAMES, SORT_COLUMNS, WCS_LANDSCAPE_PUBLISHED, COLLECTION_MODEL_PATH } from './constants.js';
 import Store from './store.js';
 import { debounce } from './utils.js';
-import { isPowerUser } from './groups.js';
+import { isPowerUser, isSurfacePowerUser } from './groups.js';
 
 export class Router extends EventTarget {
     #settingsAccessRouteWatcher = () => {
@@ -525,7 +525,8 @@ export class Router extends EventTarget {
     #getAuthorizedPage(page) {
         if (!this.#isSettingsPage(page)) return page;
         if (!Store.users.getMeta('loaded')) return page;
-        if (isPowerUser()) return page;
+        const surface = Store.search.value?.path?.split('/').filter(Boolean)[0]?.toLowerCase() ?? '';
+        if (isSurfacePowerUser(surface)) return page;
         Store.settings.creating.set(false);
         Store.settings.fragmentId.set(null);
         return PAGE_NAMES.WELCOME;
@@ -547,7 +548,8 @@ export class Router extends EventTarget {
             return false;
         }
         this.#stopWatchingSettingsAccessRoute();
-        if (isPowerUser()) return false;
+        const surface = Store.search.value?.path?.split('/').filter(Boolean)[0]?.toLowerCase() ?? '';
+        if (isSurfacePowerUser(surface)) return false;
         this.currentParams.set('page', PAGE_NAMES.WELCOME);
         this.currentParams.delete('fragmentId');
         Store.page.set(PAGE_NAMES.WELCOME);
