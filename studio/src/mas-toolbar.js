@@ -35,7 +35,6 @@ class MasToolbar extends LitElement {
     static properties = {
         createDialogOpen: { state: true },
         selectedContentType: { state: true },
-        filterCount: { state: true },
         copyDialogOpen: { state: true },
         fragmentToCopy: { state: true },
     };
@@ -80,41 +79,6 @@ class MasToolbar extends LitElement {
             white-space: nowrap;
         }
 
-        .filters-button {
-            border: none;
-            font-weight: bold;
-            cursor: default;
-        }
-
-        .filters-button:not(.shown) {
-            background-color: #fff;
-            color: var(--spectrum-gray-700);
-        }
-
-        .filters-button.shown {
-            background-color: var(--spectrum-blue-100);
-            color: var(--spectrum-accent-color-1000);
-        }
-
-        .filters-button.shown:hover {
-            background-color: var(--spectrum-blue-200);
-        }
-
-        .filters-button:not(.shown):hover {
-            background-color: var(--spectrum-actionbutton-background-color-hover);
-        }
-
-        .filters-badge {
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--spectrum-accent-color-1000);
-            color: var(--spectrum-white);
-            border-radius: 2px;
-        }
-
         sp-search {
             flex-grow: 1;
             max-width: 400px;
@@ -129,7 +93,6 @@ class MasToolbar extends LitElement {
         super();
         this.createDialogOpen = false;
         this.selectedContentType = 'merch-card';
-        this.filterCount = 0;
         this.copyDialogOpen = false;
         this.fragmentToCopy = null;
 
@@ -146,45 +109,12 @@ class MasToolbar extends LitElement {
     selecting = new StoreController(this, Store.selecting);
     loading = new StoreController(this, Store.fragments.list.loading);
 
-    connectedCallback() {
-        super.connectedCallback();
-
-        this.updateFilterCount();
-
-        this.filtersSubscription = Store.filters.subscribe(() => {
-            this.updateFilterCount();
-        });
-    }
-
     disconnectedCallback() {
         super.disconnectedCallback();
-
-        if (this.filtersSubscription) {
-            this.filtersSubscription.unsubscribe();
-        }
     }
 
     update() {
         super.update();
-    }
-
-    updateFilterCount() {
-        const filters = Store.filters.get();
-        if (!filters || !filters.tags) {
-            this.filterCount = 0;
-            return;
-        }
-
-        if (typeof filters.tags === 'string') {
-            this.filterCount = filters.tags.split(',').filter(Boolean).length;
-        } else if (Array.isArray(filters.tags)) {
-            this.filterCount = filters.tags.filter(Boolean).length;
-        } else {
-            this.filterCount = 0;
-        }
-        if (Store.createdByUsers.value.length > 0) {
-            this.filterCount += 1;
-        }
     }
 
     handleRenderModeChange(ev) {
@@ -223,12 +153,6 @@ class MasToolbar extends LitElement {
 
     get searchAndFilterControls() {
         return html`<div id="read">
-            <sp-action-button toggles label="Filter" class="filters-button ${this.filterCount > 0 ? 'shown' : ''}">
-                ${!this.filterCount > 0
-                    ? html`<sp-icon-filter slot="icon"></sp-icon-filter>`
-                    : html`<div slot="icon" class="filters-badge">${this.filterCount}</div>`}
-                Filter</sp-action-button
-            >
             <sp-search
                 label="Search"
                 placeholder="Search"
