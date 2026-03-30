@@ -14,7 +14,7 @@ import {
     SORT_ORDER,
 } from './constants.js';
 import { getService, getSlotText } from './utils.js';
-import { getFragmentMapping } from './variants/variants.js';
+import { getFragmentMapping, getCollectionOptions } from './variants/variants.js';
 import { normalizeVariant } from './hydrate.js';
 import './mas-commerce-service';
 
@@ -118,8 +118,6 @@ export class MerchCardCollection extends LitElement {
     #overrideMap = {};
     #service;
     #log;
-
-    #merchCardElement;
 
     constructor() {
         super();
@@ -247,7 +245,6 @@ export class MerchCardCollection extends LitElement {
         if (this.#service) {
             this.#log = this.#service.Log.module(MERCH_CARD_COLLECTION);
         }
-        this.#merchCardElement = customElements.get('merch-card');
         this.buildOverrideMap();
         this.init();
     }
@@ -319,7 +316,7 @@ export class MerchCardCollection extends LitElement {
             new CustomEvent(EVENT_MERCH_CARD_COLLECTION_SIDENAV_ATTACHED),
         );
 
-        const onSidenavAttached = this.#merchCardElement?.getCollectionOptions(
+        const onSidenavAttached = getCollectionOptions(
             this.variant,
         )?.onSidenavAttached;
         onSidenavAttached && onSidenavAttached(this);
@@ -737,7 +734,6 @@ export default class MerchCardCollectionHeader extends LitElement {
     }
 
     #visibility;
-    #merchCardElement;
 
     connectedCallback() {
         super.connectedCallback();
@@ -749,7 +745,6 @@ export default class MerchCardCollectionHeader extends LitElement {
             EVENT_MERCH_CARD_COLLECTION_SIDENAV_ATTACHED,
             this.handleSidenavAttached,
         );
-        this.#merchCardElement = customElements.get('merch-card');
     }
 
     disconnectedCallback() {
@@ -782,7 +777,7 @@ export default class MerchCardCollectionHeader extends LitElement {
     }
 
     getVisibility(type) {
-        const visibility = this.#merchCardElement?.getCollectionOptions(
+        const visibility = getCollectionOptions(
             this.collection?.variant,
         )?.headerVisibility;
         const typeVisibility = this.parseVisibilityOptions(visibility, type);
@@ -918,7 +913,7 @@ export default class MerchCardCollectionHeader extends LitElement {
     get customArea() {
         if (!this.#visibility.custom) return nothing;
         const customHeaderAreaGetter =
-            this.#merchCardElement?.getCollectionOptions(
+            getCollectionOptions(
                 this.collection?.variant,
             )?.customHeaderArea;
         if (!customHeaderAreaGetter) return nothing;
