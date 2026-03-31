@@ -79,6 +79,66 @@ describe('aem.js', () => {
         });
     });
 
+    describe('method: searchFragment with title matching', () => {
+        it('should include fragments matching by title when query is not UUID', async () => {
+            const titleFragment = { id: 'title-frag-1', path: '/content/dam/title-match', title: 'CC Catalog Card' };
+
+            window.fetch = async (url) => {
+                // CF search endpoint returns no results
+                if (url.includes('/search')) {
+                    return {
+                        ok: true,
+                        json: async () => ({ items: [] }),
+                    };
+                }
+                // querybuilder returns a path
+                if (url.includes('querybuilder.json')) {
+                    return {
+                        ok: true,
+                        json: async () => ({ hits: [{ path: '/content/dam/title-match' }] }),
+                    };
+                }
+                // getFragmentByPath returns the title fragment
+                if (url.includes('/cf/fragments')) {
+                    return {
+                        ok: true,
+                        json: async () => ({ items: [titleFragment] }),
+                    };
+                }
+                return { ok: false };
+            };
+
+            const actual = [];
+            for await (const items of aem.searchFragment({ path: '/content/dam', query: 'CC Catalog' })) {
+                actual.push(...items);
+            }
+
+            expect(actual).to.deep.equal([titleFragment]);
+        });
+
+        it('should not run title search when query is a UUID', async () => {
+            let querybuilderCalled = false;
+            const uuidQuery = '12345678-1234-1234-1234-123456789abc';
+
+            window.fetch = async (url) => {
+                if (url.includes('querybuilder.json')) {
+                    querybuilderCalled = true;
+                }
+                return {
+                    ok: true,
+                    json: async () => ({ items: [], hits: [] }),
+                };
+            };
+
+            // eslint-disable-next-line no-unused-vars
+            for await (const items of aem.searchFragment({ path: '/content/dam', query: uuidQuery })) {
+                // consume generator
+            }
+
+            expect(querybuilderCalled).to.equal(false);
+        });
+    });
+
     describe('method: getFragmentTranslations', () => {
         it('should fetch translations', async () => {
             window.fetch = async () => ({
