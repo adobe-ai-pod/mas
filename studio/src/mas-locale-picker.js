@@ -6,6 +6,7 @@ import {
     getRegionLocales,
     getSurfaceLocales,
     getDefaultLocale,
+    getLocaleByCode,
     getLanguageName,
     getLocaleCode,
     getCountryName,
@@ -272,6 +273,12 @@ export class MasLocalePicker extends LitElement {
         }
         this.searchSubscriptions = Store.filters.subscribe(() => {
             if (this.selection === 'checkbox') return;
+            if (this.disabled) return;
+            this.locale = Store.localeOrRegion();
+        });
+        this.regionSubscription = Store.search.subscribe(() => {
+            if (this.selection === 'checkbox') return;
+            if (this.disabled) return;
             this.locale = Store.localeOrRegion();
         });
     }
@@ -282,6 +289,7 @@ export class MasLocalePicker extends LitElement {
         if (this.searchSubscriptions) {
             this.searchSubscriptions.unsubscribe();
         }
+        this.regionSubscription?.unsubscribe();
     }
 
     handleLocaleChange(locale, fragmentId) {
@@ -359,17 +367,19 @@ export class MasLocalePicker extends LitElement {
 
     willUpdate(changedProperties) {
         if (!this.isCheckboxSelection && changedProperties.has('locale')) {
-            const found = this.getLocales().find((l) => getLocaleCode(l) === this.locale);
-            if (!found) this.locale = 'en_US';
+            const surfaceLocale = this.getLocales().find((l) => getLocaleCode(l) === this.locale);
+            if (!surfaceLocale && this.locale !== Store.localeOrRegion()) this.locale = 'en_US';
         }
         if (changedProperties.has('tempSelectedLocales')) {
             this.#tempSelectedSet = new Set(this.tempSelectedLocales);
         }
     }
 
-    /** can only be one of default languages, not regional ones */
     get currentLocale() {
-        return this.getLocales().find((l) => getLocaleCode(l) === this.locale) || getDefaultLocale(this.surface, this.locale);
+        const surfaceLocale = this.getLocales().find((l) => getLocaleCode(l) === this.locale);
+        if (surfaceLocale) return surfaceLocale;
+        if (Store.localeOrRegion() === this.locale) return getLocaleByCode(this.locale);
+        return getDefaultLocale(this.surface, this.locale);
     }
 
     get searchField() {
