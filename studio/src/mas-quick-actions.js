@@ -44,6 +44,10 @@ const ACTION_CONFIG = {
         icon: 'custom-icon-send-to-loc',
         title: 'Send to Localization',
     },
+    [QUICK_ACTION.USAGE]: {
+        icon: 'sp-icon-link',
+        title: 'Usage',
+    },
 };
 
 class MasQuickActions extends LitElement {

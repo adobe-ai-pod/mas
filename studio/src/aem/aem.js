@@ -1243,6 +1243,38 @@ class AEM {
     }
 
     /**
+     * Search content fragments using full-text filter via CF Search API.
+     * @param {{ path: string, modelIds?: string[], fullText?: { text: string } }} filter
+     * @param {AbortController} [abortController]
+     * @returns {Promise<Array>} Array of matching fragment items
+     */
+    async searchFragmentsForText(filter, abortController) {
+        const body = {};
+        if (filter.path) body.path = filter.path;
+        if (filter.modelIds?.length) body.modelIds = filter.modelIds;
+        if (filter.fullText?.text) body.fullText = filter.fullText;
+
+        const response = await fetch(this.cfSearchUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...this.headers,
+            },
+            body: JSON.stringify(body),
+            signal: abortController?.signal,
+        }).catch((err) => {
+            throw new Error(`${NETWORK_ERROR_MESSAGE}: ${err.message}`);
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to search fragments: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.items || [];
+    }
+
+    /**
      * Get parent content fragment references for a fragment path.
      * Returns which content fragments reference the given path (experience fragments excluded).
      * @param {string} path - Fragment path
@@ -1375,6 +1407,10 @@ class AEM {
                  * @see AEM#getReferencedBy
                  */
                 getReferencedBy: this.getReferencedBy.bind(this),
+                /**
+                 * @see AEM#searchFragmentsForText
+                 */
+                searchForText: this.searchFragmentsForText.bind(this),
             },
         },
     };

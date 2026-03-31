@@ -1916,6 +1916,73 @@ export class MasRepository extends LitElement {
         return uniqueOptions;
     }
 
+    /**
+     * Load which collections/fragments reference this fragment and store in Store.fragments.usages.
+     * @param {Fragment} fragment
+     */
+    async loadFragmentUsages(fragment) {
+        if (!fragment?.path) return;
+        const id = fragment.id;
+        const current = Store.fragments.usages.get();
+        Store.fragments.usages.set({ ...current, [id]: { loading: true, references: [], traffic: null } });
+        try {
+            const result = await this.aem.sites.cf.fragments.getReferencedBy(fragment.path);
+            const references = (result.parentReferences || []).filter(
+                (ref) => ref.type === 'content-fragment',
+            );
+            Store.fragments.usages.set({ ...Store.fragments.usages.get(), [id]: { loading: false, references, traffic: null } });
+        } catch {
+            Store.fragments.usages.set({ ...Store.fragments.usages.get(), [id]: { loading: false, references: [], traffic: null } });
+        }
+    }
+
+    /**
+     * Search all fragments (cards, collections, dictionaries) containing a placeholder key.
+     * @param {string} placeholderKey
+     * @param {string} surface
+     * @param {string} locale
+     * @returns {Promise<{ items: Array, timedOut: boolean }>}
+     */
+    async findPlaceholderReferences(placeholderKey, surface, locale) {
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), 15000);
+
+        const modelIds = [...EDITABLE_FRAGMENT_MODEL_IDS, DICTIONARY_ENTRY_MODEL_ID];
+
+        const searchPaths = [
+            `${ROOT_PATH}/${surface}/${locale}`,
+        ];
+        if (surface !== 'ACOM') searchPaths.push(`${ROOT_PATH}/ACOM/${locale}`);
+
+        try {
+            const resultsArrays = await Promise.all(
+                searchPaths.map((path) =>
+                    this.aem.sites.cf.fragments.searchForText(
+                        { path, modelIds, fullText: { text: placeholderKey } },
+                        abortController,
+                    ).catch(() => []),
+                ),
+            );
+            clearTimeout(timeoutId);
+
+            const seen = new Set();
+            const items = [];
+            for (const arr of resultsArrays) {
+                for (const item of arr) {
+                    if (!seen.has(item.id)) {
+                        seen.add(item.id);
+                        items.push({ id: item.id, title: item.title, path: item.path, modelId: item.modelId });
+                    }
+                }
+            }
+            return { items, timedOut: false };
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') return { items: [], timedOut: true };
+            throw err;
+        }
+    }
+
     render() {
         return nothing;
     }

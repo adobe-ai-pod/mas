@@ -1,4 +1,6 @@
 import { html, LitElement, nothing } from 'lit';
+import '../mas-fragment-usage-panel.js';
+import '../mas-fragment-traffic-panel.js';
 import '../fields/multifield.js';
 import '../fields/included-field.js';
 import '../fields/icon-picker-field.js';
@@ -298,7 +300,12 @@ class MerchCardEditor extends LitElement {
         }
     }
 
-    firstUpdated() {}
+    firstUpdated() {
+        if (this.fragment && !this.effectiveIsVariation) {
+            const repository = document.querySelector('mas-repository');
+            if (repository) repository.loadFragmentUsages(this.fragment);
+        }
+    }
 
     get whatsIncludedElement() {
         const whatsIncludedHtml = this.getEffectiveFieldValue(WHAT_IS_INCLUDED, 0) || '';
@@ -1213,6 +1220,18 @@ class MerchCardEditor extends LitElement {
                     </div>
                     ${this.renderFieldStatusIndicator('locReady')}
                 </sp-field-group>
+                ${!this.effectiveIsVariation
+                    ? html`
+                          <mas-fragment-usage-panel
+                              fragment-id="${this.fragment?.id}"
+                          ></mas-fragment-usage-panel>
+                          <mas-fragment-traffic-panel
+                              fragment-id="${this.fragment?.id}"
+                              locale="${Store.localeOrRegion()}"
+                              surface="${Store.surface() || ''}"
+                          ></mas-fragment-traffic-panel>
+                      `
+                    : nothing}
             </div>
         `;
     }

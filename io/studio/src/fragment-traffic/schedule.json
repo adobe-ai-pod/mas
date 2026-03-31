@@ -1,0 +1,9 @@
+{
+    "name": "fragment-traffic-hourly",
+    "description": "Hourly trigger to refresh Akamai/Grafana traffic buckets for M@S fragments",
+    "cron": "0 * * * *",
+    "action": "fragment-traffic",
+    "params": {
+        "action": "refresh"
+    }
+}
