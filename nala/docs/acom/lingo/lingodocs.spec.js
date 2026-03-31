@@ -7,7 +7,7 @@ export const features = [
         name: '@MAS-Lingo-Product',
         path: DOCS_GALLERY_PATH.LINGO,
         data: {
-            id: '', // TODO: fill from MWPW-186822 fragment UUID
+            id: '', // FIXME(MWPW-186822): populate with Product fragment UUID
             title: '',
         },
         tags: '@mas-docs @mas-acom @mas-lingo-card @commerce @smoke @regression',
@@ -17,7 +17,7 @@ export const features = [
         name: '@MAS-Lingo-Special-Offers',
         path: DOCS_GALLERY_PATH.LINGO,
         data: {
-            id: '', // TODO: fill from MWPW-186824 fragment UUID
+            id: '', // FIXME(MWPW-186824): populate with Special Offers fragment UUID
             title: '',
         },
         tags: '@mas-docs @mas-acom @mas-lingo-card @commerce @smoke @regression',
@@ -27,7 +27,7 @@ export const features = [
         name: '@MAS-Lingo-Image',
         path: DOCS_GALLERY_PATH.LINGO,
         data: {
-            id: '', // TODO: fill from MWPW-186817 fragment UUID
+            id: '', // FIXME(MWPW-186817): populate with Image fragment UUID
             title: '',
         },
         tags: '@mas-docs @mas-acom @mas-lingo-card @commerce @smoke @regression',
@@ -37,7 +37,7 @@ export const features = [
         name: '@MAS-Lingo-Mini-Compare',
         path: DOCS_GALLERY_PATH.LINGO,
         data: {
-            id: '', // TODO: fill from MWPW-186821 fragment UUID
+            id: '', // FIXME(MWPW-186821): populate with Mini Compare fragment UUID
             title: '',
         },
         tags: '@mas-docs @mas-acom @mas-lingo-card @commerce @smoke @regression',
@@ -47,7 +47,7 @@ export const features = [
         name: '@MAS-Lingo-Segment',
         path: DOCS_GALLERY_PATH.LINGO,
         data: {
-            id: '', // TODO: fill from MWPW-186818 fragment UUID
+            id: '', // FIXME(MWPW-186818): populate with Segment fragment UUID
             title: '',
         },
         tags: '@mas-docs @mas-acom @mas-lingo-card @commerce @smoke @regression',
