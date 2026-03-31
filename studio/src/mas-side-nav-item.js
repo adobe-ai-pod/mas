@@ -85,7 +85,11 @@ class MasSideNavItem extends LitElement {
         }
 
         a.nav-anchor {
-            display: contents;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
             text-decoration: none;
             color: inherit;
         }
