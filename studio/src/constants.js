@@ -225,6 +225,7 @@ export const QUICK_ACTION = {
     DISCARD: 'discard',
     DELETE: 'delete',
     LOC: 'loc',
+    USAGE: 'usage',
 };
 
 export const FILTER_TYPE = {

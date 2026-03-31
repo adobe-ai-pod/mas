@@ -20,6 +20,7 @@ const Store = {
         },
         inEdit: new ReactiveStore(null),
         expandedId: new ReactiveStore(null), // Fragment ID to auto-expand in variations table
+        usages: new ReactiveStore({}), // map of fragmentId -> { loading, references, traffic }
     },
     fragmentEditor: {
         fragmentId: new ReactiveStore(null),

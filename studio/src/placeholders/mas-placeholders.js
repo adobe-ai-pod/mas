@@ -10,6 +10,7 @@ import { MasRepository } from '../mas-repository.js';
 import '../mas-selection-panel.js';
 import { showToast } from '../utils.js';
 import { confirmation } from '../mas-confirm-dialog.js';
+import { showPlaceholderReferencesModal } from '../mas-placeholder-references-modal.js';
 import { FragmentStore } from '../reactivity/fragment-store.js';
 import { clearCaches } from '../../libs/fragment-client.js';
 
@@ -234,6 +235,16 @@ class MasPlaceholders extends LitElement {
     }
 
     async onBulkDelete(keys) {
+        // Check references for each selected placeholder key
+        for (const key of keys) {
+            const proceed = await showPlaceholderReferencesModal({
+                placeholderKey: key,
+                surface: Store.surface(),
+                locale: Store.localeOrRegion(),
+            });
+            if (!proceed) return;
+        }
+
         const confirmed = await confirmation({
             title: 'Delete placeholder(s)',
             content: `Are you sure you want to delete ${keys.length} placeholder(s)? This action cannot be undone.`,

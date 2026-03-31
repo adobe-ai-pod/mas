@@ -7,6 +7,7 @@ import { confirmation } from '../mas-confirm-dialog.js';
 import { showToast } from '../utils.js';
 import { FragmentStore } from '../reactivity/fragment-store.js';
 import { Placeholder } from '../aem/placeholder.js';
+import { showPlaceholderReferencesModal } from '../mas-placeholder-references-modal.js';
 
 class MasPlaceholdersItem extends LitElement {
     static properties = {
@@ -102,6 +103,15 @@ class MasPlaceholdersItem extends LitElement {
     async onDelete(event) {
         this.updatePending(true);
         this.toggleDropdown(this.placeholder.key, event);
+        const proceed = await showPlaceholderReferencesModal({
+            placeholderKey: this.placeholder.key,
+            surface: Store.surface(),
+            locale: Store.localeOrRegion(),
+        });
+        if (!proceed) {
+            this.updatePending(false);
+            return;
+        }
         const confirmed = await confirmation({
             title: 'Delete placeholder',
             content: `Are you sure you want to delete the placeholder "${this.placeholder.key}"? This action cannot be undone.`,
@@ -119,6 +129,12 @@ class MasPlaceholdersItem extends LitElement {
     async onPublish(event) {
         if (this.placeholder.status === STATUS_PUBLISHED) return;
         this.toggleDropdown(this.placeholder.key, event);
+        const proceed = await showPlaceholderReferencesModal({
+            placeholderKey: this.placeholder.key,
+            surface: Store.surface(),
+            locale: Store.localeOrRegion(),
+        });
+        if (!proceed) return;
         showToast('Publishing placeholder...');
         await this.repository.publishFragment(this.placeholder);
         const updatedPlaceholder = {
