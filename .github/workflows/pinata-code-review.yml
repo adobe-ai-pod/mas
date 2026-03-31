@@ -58,7 +58,10 @@ jobs:
         with:
           repository: joaquinrivero/agentic-harness
           token: ${{ steps.harness-token.outputs.token }}
-          path: /home/runner/harness
+          path: harness
+
+      - name: Move harness outside workspace
+        run: mv harness /home/runner/harness
 
       - name: Validate inputs
         env:
