@@ -7,13 +7,13 @@ import { createWorkerPageSetup, DOCS_GALLERY_PATH } from '../../../utils/commerc
 let mnemonicPage;
 let webUtil;
 
-test.skip(({ browserName }) => browserName !== 'chromium', 'Not supported to run on multiple browsers.');
-
 const workerSetup = createWorkerPageSetup({
     pages: [{ name: 'US', url: DOCS_GALLERY_PATH.MNEMONIC_LIST }],
 });
 
 test.describe('Merch Mnemonic List CSS test suite', () => {
+    test.skip(({ browserName }) => browserName !== 'chromium', 'Not supported to run on multiple browsers.');
+
     test.beforeAll(async ({ browser, baseURL }) => {
         await workerSetup.setupWorkerPages({ browser, baseURL });
     });
