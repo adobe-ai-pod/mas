@@ -7,6 +7,8 @@ import { getItemsSelectionStore } from '../items-selection-store.js';
 import { FILTER_TYPE, TABLE_TYPE } from '../../constants.js';
 import ReactiveController from '../../reactivity/reactive-controller.js';
 
+let savedCreatedByFilter = [];
+
 class MasSearchAndFilters extends LitElement {
     static styles = styles;
 
@@ -20,10 +22,12 @@ class MasSearchAndFilters extends LitElement {
         marketSegmentFilter: { type: Array, state: true },
         customerSegmentFilter: { type: Array, state: true },
         productFilter: { type: Array, state: true },
+        createdByFilter: { type: Array, state: true },
         templateOptions: { type: Array },
         marketSegmentOptions: { type: Array },
         customerSegmentOptions: { type: Array },
         productOptions: { type: Array },
+        createdByOptions: { type: Array },
         searchOnly: { type: Boolean },
     };
 
@@ -34,15 +38,18 @@ class MasSearchAndFilters extends LitElement {
         this.marketSegmentFilter = [];
         this.customerSegmentFilter = [];
         this.productFilter = [];
+        this.createdByFilter = [];
         this.templateOptions = [];
         this.marketSegmentOptions = [];
         this.customerSegmentOptions = [];
         this.productOptions = [];
+        this.createdByOptions = [];
         this.dataSubscription = null;
     }
 
     connectedCallback() {
         super.connectedCallback();
+        this.createdByFilter = savedCreatedByFilter;
         if (this.type === TABLE_TYPE.CARDS) {
             this.#savedSearch = Store.search.get();
             this.#savedFilters = Store.filters.get();
@@ -52,6 +59,7 @@ class MasSearchAndFilters extends LitElement {
             getItemsSelectionStore()[`display${this.typeUppercased}`],
             Store[this.type === TABLE_TYPE.PLACEHOLDERS ? 'placeholders' : 'fragments'].list.loading,
             ...(this.type !== TABLE_TYPE.PLACEHOLDERS ? [Store.fragments.list.firstPageLoaded] : []),
+            Store.users,
         ]);
         const dataCallback = () => {
             if (!this.searchOnly) {
@@ -68,6 +76,7 @@ class MasSearchAndFilters extends LitElement {
 
     disconnectedCallback() {
         super.disconnectedCallback();
+        savedCreatedByFilter = this.createdByFilter;
         getItemsSelectionStore()[`display${this.typeUppercased}`].set(
             getItemsSelectionStore()[`all${this.typeUppercased}`].value,
         );
@@ -102,6 +111,7 @@ class MasSearchAndFilters extends LitElement {
         const marketSegmentMap = new Map(this.marketSegmentOptions.map((opt) => [opt.id || opt.value, opt]));
         const customerSegmentMap = new Map(this.customerSegmentOptions.map((opt) => [opt.id || opt.value, opt]));
         const productMap = new Map(this.productOptions.map((opt) => [opt.id || opt.value, opt]));
+        const createdByMap = new Map(this.createdByOptions.map((opt) => [opt.id || opt.value, opt]));
 
         for (const id of this.templateFilter) {
             const option = templateMap.get(id);
@@ -119,6 +129,10 @@ class MasSearchAndFilters extends LitElement {
             const option = productMap.get(id);
             if (option) filters.push({ type: FILTER_TYPE.PRODUCT, id, label: option.title || option.label });
         }
+        for (const id of this.createdByFilter) {
+            const option = createdByMap.get(id);
+            if (option) filters.push({ type: FILTER_TYPE.CREATED_BY, id, label: option.title || option.label });
+        }
         return filters;
     }
 
@@ -126,7 +140,11 @@ class MasSearchAndFilters extends LitElement {
         const marketSegments = new Map();
         const customerSegments = new Map();
         const products = new Map();
+        const createdByIds = new Set();
         for (const fragment of getItemsSelectionStore()[`all${this.typeUppercased}`].value) {
+            if (fragment.created?.by) {
+                createdByIds.add(fragment.created.by);
+            }
             if (!fragment.tags) continue;
 
             for (const tag of fragment.tags) {
@@ -148,6 +166,13 @@ class MasSearchAndFilters extends LitElement {
         this.marketSegmentOptions = Array.from(marketSegments.values()).sort((a, b) => a.title.localeCompare(b.title));
         this.customerSegmentOptions = Array.from(customerSegments.values()).sort((a, b) => a.title.localeCompare(b.title));
         this.productOptions = Array.from(products.values()).sort((a, b) => a.title.localeCompare(b.title));
+
+        const usersMap = new Map(
+            (Store.users.value || []).map((u) => [u.userPrincipalName?.toLowerCase(), u.displayName]),
+        );
+        this.createdByOptions = Array.from(createdByIds)
+            .map((id) => ({ id, title: usersMap.get(id.toLowerCase()) || id }))
+            .sort((a, b) => a.title.localeCompare(b.title));
     }
 
     willUpdate(changed) {
@@ -156,7 +181,8 @@ class MasSearchAndFilters extends LitElement {
             changed.has('templateFilter') ||
             changed.has('marketSegmentFilter') ||
             changed.has('customerSegmentFilter') ||
-            changed.has('productFilter')
+            changed.has('productFilter') ||
+            changed.has('createdByFilter')
         ) {
             this.#applyFilters();
         }
@@ -177,6 +203,9 @@ class MasSearchAndFilters extends LitElement {
                 break;
             case FILTER_TYPE.PRODUCT:
                 currentValues = [...this.productFilter];
+                break;
+            case FILTER_TYPE.CREATED_BY:
+                currentValues = [...this.createdByFilter];
                 break;
             default:
                 currentValues = [];
@@ -203,6 +232,9 @@ class MasSearchAndFilters extends LitElement {
             case FILTER_TYPE.PRODUCT:
                 this.productFilter = currentValues;
                 break;
+            case FILTER_TYPE.CREATED_BY:
+                this.createdByFilter = currentValues;
+                break;
         }
     }
 
@@ -224,6 +256,9 @@ class MasSearchAndFilters extends LitElement {
             case FILTER_TYPE.PRODUCT:
                 this.productFilter = this.productFilter.filter((filterId) => filterId !== id);
                 break;
+            case FILTER_TYPE.CREATED_BY:
+                this.createdByFilter = this.createdByFilter.filter((filterId) => filterId !== id);
+                break;
         }
     }
 
@@ -232,6 +267,7 @@ class MasSearchAndFilters extends LitElement {
         this.marketSegmentFilter = [];
         this.customerSegmentFilter = [];
         this.productFilter = [];
+        this.createdByFilter = [];
     }
 
     #renderAppliedFilters() {
@@ -298,6 +334,8 @@ class MasSearchAndFilters extends LitElement {
         const hasMarket = this.marketSegmentFilter?.length > 0;
         const hasCustomer = this.customerSegmentFilter?.length > 0;
         const hasProduct = this.productFilter?.length > 0;
+        const hasCreatedBy = this.createdByFilter?.length > 0;
+        const createdByLc = hasCreatedBy ? this.createdByFilter.map((v) => v.toLowerCase()) : [];
 
         const result = source.filter((fragment) => {
             if (query) {
@@ -335,6 +373,10 @@ class MasSearchAndFilters extends LitElement {
             }
             if (hasProduct) {
                 if (!fragment.tags?.some((tag) => this.productFilter.includes(tag.id))) return false;
+            }
+            if (hasCreatedBy) {
+                const itemCreatedBy = (fragment.created?.by || '').toLowerCase();
+                if (!itemCreatedBy || !createdByLc.includes(itemCreatedBy)) return false;
             }
             return true;
         });
@@ -375,6 +417,14 @@ class MasSearchAndFilters extends LitElement {
                     FILTER_TYPE.CUSTOMER_SEGMENT,
                 )}
                 ${this.#renderFilterPicker('Product', this.productOptions, this.productFilter, FILTER_TYPE.PRODUCT)}
+                ${this.type !== TABLE_TYPE.PLACEHOLDERS
+                    ? this.#renderFilterPicker(
+                          'Created by',
+                          this.createdByOptions,
+                          this.createdByFilter,
+                          FILTER_TYPE.CREATED_BY,
+                      )
+                    : nothing}
             </div>
             ${this.#renderAppliedFilters()}
         `;

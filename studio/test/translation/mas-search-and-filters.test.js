@@ -39,6 +39,7 @@ describe('MasSearchAndFilters', () => {
         Store.fragments.list.firstPageLoaded.set(true);
         Store.placeholders.list.loading.set(false);
         Store.placeholders.list.data.set([]);
+        Store.users.set([]);
     });
 
     afterEach(() => {
@@ -54,6 +55,7 @@ describe('MasSearchAndFilters', () => {
         Store.fragments.list.firstPageLoaded.set(false);
         Store.placeholders.list.loading.set(false);
         Store.placeholders.list.data.set([]);
+        Store.users.set([]);
         setItemsSelectionStore(null);
     });
 
@@ -65,6 +67,7 @@ describe('MasSearchAndFilters', () => {
             expect(el.marketSegmentFilter).to.deep.equal([]);
             expect(el.customerSegmentFilter).to.deep.equal([]);
             expect(el.productFilter).to.deep.equal([]);
+            expect(el.createdByFilter).to.deep.equal([]);
         });
 
         it('should accept type property for cards', async () => {
@@ -235,10 +238,10 @@ describe('MasSearchAndFilters', () => {
             expect(filters).to.be.null;
         });
 
-        it('should render four filter triggers', async () => {
+        it('should render five filter triggers for non-placeholder types', async () => {
             const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
             const filterTriggers = el.shadowRoot.querySelectorAll('.filter-trigger');
-            expect(filterTriggers.length).to.equal(4);
+            expect(filterTriggers.length).to.equal(5);
         });
 
         it('should render Template filter', async () => {
@@ -746,6 +749,7 @@ describe('MasSearchAndFilters', () => {
             el.marketSegmentFilter = ['mas:market_segment/com'];
             el.customerSegmentFilter = ['mas:customer_segment/individual'];
             el.productFilter = ['mas:product_code/photoshop'];
+            el.createdByFilter = ['user@adobe.com'];
             await el.updateComplete;
             const clearButton = el.shadowRoot.querySelector('.applied-filters sp-action-button');
             clearButton.click();
@@ -754,6 +758,7 @@ describe('MasSearchAndFilters', () => {
             expect(el.marketSegmentFilter).to.deep.equal([]);
             expect(el.customerSegmentFilter).to.deep.equal([]);
             expect(el.productFilter).to.deep.equal([]);
+            expect(el.createdByFilter).to.deep.equal([]);
         });
     });
 
@@ -989,6 +994,114 @@ describe('MasSearchAndFilters', () => {
             el.searchQuery = 'photoshop';
             await el.updateComplete;
             expect(Store.translationProjects.displayCollections.get().length).to.equal(1);
+        });
+    });
+
+    describe('createdBy filter', () => {
+        it('should filter items by created.by field', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({ title: 'Card A', created: { by: 'alice@adobe.com' } }),
+                createMockFragment({ title: 'Card B', created: { by: 'bob@adobe.com' } }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            el.createdByFilter = ['alice@adobe.com'];
+            await el.updateComplete;
+            expect(Store.translationProjects.displayCards.get().length).to.equal(1);
+            expect(Store.translationProjects.displayCards.get()[0].title).to.equal('Card A');
+        });
+
+        it('should use OR logic — selecting multiple creators shows items from any', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({ title: 'Card A', created: { by: 'alice@adobe.com' } }),
+                createMockFragment({ title: 'Card B', created: { by: 'bob@adobe.com' } }),
+                createMockFragment({ title: 'Card C', created: { by: 'charlie@adobe.com' } }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            el.createdByFilter = ['alice@adobe.com', 'bob@adobe.com'];
+            await el.updateComplete;
+            expect(Store.translationProjects.displayCards.get().length).to.equal(2);
+        });
+
+        it('should show all items when createdByFilter is cleared', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({ title: 'Card A', created: { by: 'alice@adobe.com' } }),
+                createMockFragment({ title: 'Card B', created: { by: 'bob@adobe.com' } }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            el.createdByFilter = ['alice@adobe.com'];
+            await el.updateComplete;
+            expect(Store.translationProjects.displayCards.get().length).to.equal(1);
+            el.createdByFilter = [];
+            await el.updateComplete;
+            expect(Store.translationProjects.displayCards.get().length).to.equal(2);
+        });
+
+        it('should perform case-insensitive comparison on created.by', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({ title: 'Card A', created: { by: 'Alice@Adobe.com' } }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            el.createdByFilter = ['alice@adobe.com'];
+            await el.updateComplete;
+            expect(Store.translationProjects.displayCards.get().length).to.equal(1);
+        });
+
+        it('should populate createdByOptions from Store.users with display names', async () => {
+            Store.users.set([
+                { userPrincipalName: 'alice@adobe.com', displayName: 'Alice Smith' },
+                { userPrincipalName: 'bob@adobe.com', displayName: 'Bob Jones' },
+            ]);
+            Store.translationProjects.allCards.set([
+                createMockFragment({ created: { by: 'alice@adobe.com' } }),
+                createMockFragment({ created: { by: 'bob@adobe.com' } }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            await el.updateComplete;
+            expect(el.createdByOptions.length).to.equal(2);
+            const aliceOpt = el.createdByOptions.find((o) => o.id === 'alice@adobe.com');
+            expect(aliceOpt.title).to.equal('Alice Smith');
+        });
+
+        it('should use raw created.by value when Store.users is empty (graceful degradation)', async () => {
+            Store.users.set([]);
+            Store.translationProjects.allCards.set([
+                createMockFragment({ created: { by: 'alice@adobe.com' } }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            await el.updateComplete;
+            expect(el.createdByOptions.length).to.equal(1);
+            expect(el.createdByOptions[0].id).to.equal('alice@adobe.com');
+            expect(el.createdByOptions[0].title).to.equal('alice@adobe.com');
+        });
+
+        it('should not render Created by filter for placeholders type', async () => {
+            Store.translationProjects.allPlaceholders.set([createMockPlaceholder()]);
+            const el = await fixture(
+                html`<mas-search-and-filters type="placeholders" .searchOnly=${false}></mas-search-and-filters>`,
+            );
+            await el.updateComplete;
+            const filters = el.shadowRoot.querySelector('.filters');
+            expect(filters.textContent).to.not.include('Created by');
+        });
+
+        it('should render Created by filter for cards type', async () => {
+            Store.translationProjects.allCards.set([createMockFragment({ created: { by: 'alice@adobe.com' } })]);
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            await el.updateComplete;
+            const filters = el.shadowRoot.querySelector('.filters');
+            expect(filters.textContent).to.include('Created by');
+        });
+
+        it('should remove createdBy filter on tag delete', async () => {
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            el.createdByOptions = [{ id: 'alice@adobe.com', title: 'Alice Smith' }];
+            el.createdByFilter = ['alice@adobe.com'];
+            await el.updateComplete;
+            const tag = el.shadowRoot.querySelector('sp-tag');
+            tag.value = { type: FILTER_TYPE.CREATED_BY, id: 'alice@adobe.com' };
+            tag.dispatchEvent(new CustomEvent('delete', { bubbles: true }));
+            await el.updateComplete;
+            expect(el.createdByFilter).to.not.include('alice@adobe.com');
         });
     });
 });
