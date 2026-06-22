@@ -2257,6 +2257,13 @@ merch-card .footer-row-cell:nth-child(8) {
             display: block;
         }
 
+        :host([variant='mini-compare-chart-mweb']) .body > slot[name='icons'] {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+        }
+
         :host([variant='mini-compare-chart-mweb'])
             .body
             > slot[name='heading-m-price'] {
