@@ -1265,7 +1265,7 @@ describe('MasSideNav – Copy Field', () => {
 
             expect(el.variationDataLoading).to.be.false;
             expect(updateStoresStub.called).to.be.true;
-            expect(updateStoresStub.firstCall.args[0]).to.have.length(7);
+            expect(updateStoresStub.firstCall.args[0]).to.have.length(8);
         });
 
         it('should subscribe to previewStore updates when fragment enters edit', () => {
@@ -1289,5 +1289,52 @@ describe('MasSideNav – Copy Field', () => {
 
             expect(el.updateVariationLoadingState.calledOnce).to.be.true;
         });
+    });
+});
+
+describe('MasSideNav - Promotions nav item', () => {
+    let originalProfile;
+    let originalUsers;
+    let originalViewMode;
+    let originalPage;
+    let el;
+
+    beforeEach(() => {
+        originalProfile = structuredClone(Store.profile.get());
+        originalUsers = structuredClone(Store.users.get());
+        originalViewMode = Store.viewMode.value;
+        originalPage = Store.page.value;
+        Store.viewMode.set('default');
+        Store.page.set(PAGE_NAMES.CONTENT);
+        el = document.createElement('mas-side-nav');
+        document.body.appendChild(el);
+    });
+
+    afterEach(() => {
+        el.remove();
+        Store.profile.set(originalProfile);
+        Store.users.set(originalUsers);
+        Store.viewMode.set(originalViewMode);
+        Store.page.set(originalPage);
+    });
+
+    it('hides Promotions for non-admin users', async () => {
+        Store.profile.set({ email: 'user@adobe.com' });
+        Store.users.set([{ userPrincipalName: 'user@adobe.com', groups: ['GRP-ODIN-MAS-ACOM-POWERUSERS'] }]);
+        await el.updateComplete;
+        const items = el.shadowRoot.querySelectorAll('mas-side-nav-item');
+        const promotions = [...items].find((n) => n.label === 'Promotions');
+        expect(promotions).to.be.undefined;
+        expect([...items].some((n) => n.label === 'Collections')).to.be.true;
+    });
+
+    it('shows Promotions for MAS admin users', async () => {
+        Store.profile.set({ email: 'admin@adobe.com' });
+        Store.users.set([{ userPrincipalName: 'admin@adobe.com', groups: ['GRP-ODIN-MAS-ADMINS'] }]);
+        await el.updateComplete;
+        const items = el.shadowRoot.querySelectorAll('mas-side-nav-item');
+        const promotions = [...items].find((n) => n.label === 'Promotions');
+        expect(promotions).to.exist;
+        expect(promotions.hasAttribute('disabled')).to.be.false;
     });
 });
