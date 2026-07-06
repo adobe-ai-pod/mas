@@ -889,6 +889,7 @@ export class MasRepository extends LitElement {
                 }
             }
         }
+        const orphansByParent = new Map();
         for (const promoItem of promoVariationItems) {
             const parentPath = resolvePromoVariationParentPath(promoItem.path);
             if (!parentPath) continue;
@@ -899,9 +900,25 @@ export class MasRepository extends LitElement {
             });
             if (parentStore) {
                 const parent = parentStore.get?.() ?? parentStore.value;
+                if (!parent) continue;
                 const merged = mergePromoVariationReferences(parent, [promoItem]);
                 parentStore.set?.(merged);
+            } else {
+                const group = orphansByParent.get(parentPath) || [];
+                group.push(promoItem);
+                orphansByParent.set(parentPath, group);
             }
+        }
+        for (const [parentPath, promoItems] of orphansByParent) {
+            if (fragmentStores.some((f) => f.value?.path === parentPath)) continue;
+            if (fgStores.some((f) => f.value?.path === parentPath)) continue;
+            const parentData = await this.aem.sites.cf.fragments.getByPath(parentPath).catch(() => null);
+            if (!parentData) continue;
+            applyCorrectorToFragment(parentData, surface);
+            const merged = mergePromoVariationReferences(parentData, promoItems);
+            const fragment = await this.#addToCache(merged);
+            const fgStore = generateFragmentStore(fragment, null, { lazy: true });
+            fgStores.push(fgStore);
         }
         fragmentStores.push(...fgStores);
         return false;
