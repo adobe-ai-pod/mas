@@ -543,7 +543,7 @@ export default class EditorPanel extends LitElement {
     showNegativeAlert() {
         Events.toast.emit({
             variant: 'negative',
-            content: 'Failed to copy code to clipboard',
+            content: 'Failed to copy link to clipboard',
         });
     }
 
@@ -556,7 +556,7 @@ export default class EditorPanel extends LitElement {
             this.fragment,
             Store.search.get().path,
             Store.page.get(),
-            'Failed to copy code to clipboard',
+            'Failed to copy link to clipboard',
         );
         if (!code || !richText || !href) return;
 
@@ -570,7 +570,7 @@ export default class EditorPanel extends LitElement {
             ]);
             Events.toast.emit({
                 variant: 'positive',
-                content: 'Code copied to clipboard',
+                content: 'Link copied to clipboard',
             });
         } catch (e) {
             this.showNegativeAlert();
@@ -828,13 +828,6 @@ export default class EditorPanel extends LitElement {
                         <sp-icon-undo slot="icon"></sp-icon-undo>
                         <sp-tooltip self-managed placement="bottom">Discard changes</sp-tooltip>
                     </sp-action-button>
-                    <sp-action-button label="Clone" title="Clone (Ctrl+L)" value="clone" @click="${this.showClone}">
-                        ${this.operation.equals(OPERATIONS.CLONE)
-                            ? html`<sp-progress-circle indeterminate size="s"></sp-progress-circle>`
-                            : html` <sp-icon-duplicate slot="icon"></sp-icon-duplicate>`}
-
-                        <sp-tooltip self-managed placement="bottom">Clone (Ctrl+L)</sp-tooltip>
-                    </sp-action-button>
                     <sp-action-button label="Preview" title="Preview on page" value="preview" @click="${this.previewOnPage}">
                         <sp-icon-preview slot="icon"></sp-icon-preview>
                         <sp-tooltip self-managed placement="bottom">Preview on page</sp-tooltip>
@@ -854,9 +847,9 @@ export default class EditorPanel extends LitElement {
                         <sp-icon-publish-remove slot="icon"></sp-icon-publish-remove>
                         <sp-tooltip self-managed placement="bottom">Unpublish</sp-tooltip>
                     </sp-action-button>
-                    <sp-action-button label="Use" title="Use (Ctrl+K)" value="use" @click="${this.copyToUse}">
-                        <sp-icon-code slot="icon"></sp-icon-code>
-                        <sp-tooltip self-managed placement="bottom">Use (Ctrl+K)</sp-tooltip>
+                    <sp-action-button label="Copy Link" title="Copy Link (Ctrl+K)" value="use" @click="${this.copyToUse}">
+                        <sp-icon-link slot="icon"></sp-icon-link>
+                        <sp-tooltip self-managed placement="bottom">Copy Link (Ctrl+K)</sp-tooltip>
                     </sp-action-button>
                     <sp-action-button
                         label="Delete fragment"

@@ -172,9 +172,9 @@ class MasFragmentTable extends LitElement {
                     'text/html': new Blob([richText], { type: 'text/html' }),
                 }),
             ]);
-            showToast('Code copied to clipboard', 'positive');
+            showToast('Link copied to clipboard', 'positive');
         } catch (e) {
-            showToast('Failed to copy code to clipboard', 'negative');
+            showToast('Failed to copy link to clipboard', 'negative');
         }
     }
 
@@ -307,8 +307,8 @@ class MasFragmentTable extends LitElement {
                                   Preview on page
                               </sp-menu-item>
                               <sp-menu-item @click=${this.copyCode}>
-                                  <sp-icon-code slot="icon"></sp-icon-code>
-                                  Copy Code
+                                  <sp-icon-link slot="icon"></sp-icon-link>
+                                  Copy Link
                               </sp-menu-item>
                           </sp-action-menu>`}
                 </sp-table-cell>

@@ -50,7 +50,6 @@ class MasTranslationEditor extends LitElement {
             QUICK_ACTION.SAVE,
             QUICK_ACTION.DISCARD,
             QUICK_ACTION.DELETE,
-            QUICK_ACTION.DUPLICATE,
             QUICK_ACTION.CANCEL,
             QUICK_ACTION.COPY,
             QUICK_ACTION.LOCK,
@@ -855,7 +854,6 @@ class MasTranslationEditor extends LitElement {
                 <mas-quick-actions
                     .actions=${[
                         QUICK_ACTION.SAVE,
-                        QUICK_ACTION.DUPLICATE,
                         QUICK_ACTION.LOC,
                         QUICK_ACTION.CANCEL,
                         QUICK_ACTION.COPY,

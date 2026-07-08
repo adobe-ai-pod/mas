@@ -71,7 +71,6 @@ function getPromotionPickerFragmentLabel(data) {
 
 const PROMOTION_QUICK_ACTIONS = [
     QUICK_ACTION.SAVE,
-    QUICK_ACTION.DUPLICATE,
     QUICK_ACTION.PUBLISH,
     QUICK_ACTION.UNPUBLISH,
     QUICK_ACTION.COPY,
@@ -81,11 +80,9 @@ const PROMOTION_QUICK_ACTIONS = [
 
 const PROMOTION_QUICK_ACTION_ICON_OVERRIDES = {
     [QUICK_ACTION.SAVE]: { icon: SAVE_SVG, title: 'Save' },
-    [QUICK_ACTION.DUPLICATE]: { icon: CLONE_SVG, title: 'Duplicate' },
-
     [QUICK_ACTION.PUBLISH]: { icon: PUBLISH_SVG, title: 'Publish' },
     [QUICK_ACTION.UNPUBLISH]: { icon: 'sp-icon-publish-remove', title: 'Unpublish' },
-    [QUICK_ACTION.COPY]: { icon: COPY_SVG, title: 'Copy link' },
+    [QUICK_ACTION.COPY]: { icon: COPY_SVG, title: 'Copy Link' },
     [QUICK_ACTION.LOCK]: { icon: LOCK_SVG, title: 'Lock project' },
     [QUICK_ACTION.DELETE]: { icon: DELETE_SVG, title: 'Delete', className: 'delete-action' },
 };
@@ -832,7 +829,6 @@ class MasPromotionsEditor extends LitElement {
         }
         if (this.isNewPromotion) {
             if (this.isCreated) disabled.add(QUICK_ACTION.SAVE);
-            disabled.add(QUICK_ACTION.DUPLICATE);
             disabled.add(QUICK_ACTION.PUBLISH);
             disabled.add(QUICK_ACTION.UNPUBLISH);
             disabled.add(QUICK_ACTION.COPY);
@@ -845,9 +841,6 @@ class MasPromotionsEditor extends LitElement {
         if (!this.fragment?.id) {
             disabled.add(QUICK_ACTION.COPY);
             disabled.add(QUICK_ACTION.DELETE);
-            disabled.add(QUICK_ACTION.DUPLICATE);
-        } else if (publishOptions.hasUnsavedChanges) {
-            disabled.add(QUICK_ACTION.DUPLICATE);
         }
         if (!canPublishPromotionNow(this.fragment, publishOptions) && !canSchedulePromotion(this.fragment, publishOptions)) {
             disabled.add(QUICK_ACTION.PUBLISH);

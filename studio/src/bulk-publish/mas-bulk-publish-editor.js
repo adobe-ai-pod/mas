@@ -327,7 +327,6 @@ class MasBulkPublishEditor extends LitElement {
         if (this.isLocked) {
             return new Set([
                 QUICK_ACTION.SAVE,
-                QUICK_ACTION.DUPLICATE,
                 QUICK_ACTION.PUBLISH,
                 QUICK_ACTION.COPY,
                 QUICK_ACTION.REVERT,
@@ -337,7 +336,6 @@ class MasBulkPublishEditor extends LitElement {
         if (this.isPublishing) {
             return new Set([
                 QUICK_ACTION.SAVE,
-                QUICK_ACTION.DUPLICATE,
                 QUICK_ACTION.PUBLISH,
                 QUICK_ACTION.REVERT,
                 QUICK_ACTION.LOCK,
@@ -349,7 +347,6 @@ class MasBulkPublishEditor extends LitElement {
         }
         const disabled = new Set();
         if (this.isNewProject) {
-            disabled.add(QUICK_ACTION.DUPLICATE);
             disabled.add(QUICK_ACTION.LOCK);
         } else if (!this.hasChanges) {
             disabled.add(QUICK_ACTION.SAVE);
@@ -878,7 +875,6 @@ class MasBulkPublishEditor extends LitElement {
                 drag-handle-style="bar"
                 .actions=${[
                     QUICK_ACTION.SAVE,
-                    QUICK_ACTION.DUPLICATE,
                     QUICK_ACTION.PUBLISH,
                     QUICK_ACTION.COPY,
                     QUICK_ACTION.REVERT,
@@ -887,9 +883,8 @@ class MasBulkPublishEditor extends LitElement {
                 ]}
                 .iconOverrides=${{
                     [QUICK_ACTION.SAVE]: { icon: SAVE_SVG, title: 'Save' },
-                    [QUICK_ACTION.DUPLICATE]: { icon: CLONE_SVG, title: 'Duplicate' },
                     [QUICK_ACTION.PUBLISH]: { icon: PUBLISH_SVG, title: this.publishBlockedReason || 'Publish' },
-                    [QUICK_ACTION.COPY]: { icon: COPY_SVG, title: 'Copy' },
+                    [QUICK_ACTION.COPY]: { icon: COPY_SVG, title: 'Copy Link' },
                     [QUICK_ACTION.REVERT]: { icon: REVERT_SVG, title: 'Revert' },
                     [QUICK_ACTION.LOCK]: {
                         icon: this.isLocked ? LOCK_OPEN_SVG : LOCK_SVG,

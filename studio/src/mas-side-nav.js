@@ -282,10 +282,6 @@ class MasSideNav extends LitElement {
         await this.fragmentEditor.showCreateVariation();
     }
 
-    async duplicateFragment() {
-        if (!this.fragmentEditor) return;
-        await this.fragmentEditor.showClone();
-    }
 
     async publishFragment() {
         if (!this.fragmentEditor) return;
@@ -900,9 +896,6 @@ class MasSideNav extends LitElement {
                       <mas-side-nav-item label="Create Variation" ?disabled=${loading} @nav-click="${this.createVariant}">
                           <sp-icon-add slot="icon"></sp-icon-add>
                       </mas-side-nav-item>
-                      <mas-side-nav-item label="Duplicate" ?disabled=${loading} @nav-click="${this.duplicateFragment}">
-                          <sp-icon-duplicate slot="icon"></sp-icon-duplicate>
-                      </mas-side-nav-item>
                   `
                 : ''}
             <mas-side-nav-item label="Preview" ?disabled=${loading} @nav-click="${this.previewFragment}">
@@ -914,8 +907,8 @@ class MasSideNav extends LitElement {
             <mas-side-nav-item label="Unpublish" disabled>
                 <sp-icon-publish-remove slot="icon"></sp-icon-publish-remove>
             </mas-side-nav-item>
-            <mas-side-nav-item label="Copy Code" ?disabled=${loading} @nav-click="${this.copyCode}">
-                <sp-icon-code slot="icon"></sp-icon-code>
+            <mas-side-nav-item label="Copy Link" ?disabled=${loading} @nav-click="${this.copyCode}">
+                <sp-icon-link slot="icon"></sp-icon-link>
             </mas-side-nav-item>
             ${this.copyFieldButton}
             <mas-side-nav-item label="History" ?disabled=${loading} @nav-click="${this.showHistory}">

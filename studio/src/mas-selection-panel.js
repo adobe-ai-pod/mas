@@ -20,7 +20,6 @@ class MasSelectionPanel extends LitElement {
         open: { type: Boolean, attribute: true },
         selectionStore: { type: Object, attribute: false },
         repository: { type: Object, attribute: false },
-        onDuplicate: { type: Function, attribute: false },
         onDelete: { type: Function, attribute: false },
         onPublish: { type: Function, attribute: false },
         onUnpublish: { type: Function, attribute: false },
@@ -34,7 +33,6 @@ class MasSelectionPanel extends LitElement {
         this.open = false;
         this.selectionStore = null;
         this.repository = null;
-        this.onDuplicate = null;
         this.onDelete = null;
         this.onPublish = null;
         this.onUnpublish = null;
@@ -67,10 +65,6 @@ class MasSelectionPanel extends LitElement {
     }
 
     // #region Handlers
-
-    handleDuplicate(event) {
-        this.onDuplicate(this.selection, event);
-    }
 
     handleDelete(event) {
         this.onDelete(this.selection, event);
@@ -157,10 +151,10 @@ class MasSelectionPanel extends LitElement {
             ]);
             Events.toast.emit({
                 variant: 'positive',
-                content: `Copied ${results.length} code snippet${results.length > 1 ? 's' : ''} to clipboard`,
+                content: `Copied ${results.length} link${results.length > 1 ? 's' : ''} to clipboard`,
             });
         } catch {
-            Events.toast.emit({ variant: 'negative', content: 'Failed to copy code to clipboard' });
+            Events.toast.emit({ variant: 'negative', content: 'Failed to copy link to clipboard' });
         }
     }
 
@@ -172,15 +166,6 @@ class MasSelectionPanel extends LitElement {
             ${count} selected
             ${count === 1
                 ? html`<sp-action-button
-                          slot="buttons"
-                          label="Duplicate"
-                          ?disabled=${!this.onDuplicate}
-                          @click=${this.handleDuplicate}
-                      >
-                          <sp-icon-duplicate slot="icon"></sp-icon-duplicate>
-                          <sp-tooltip self-managed placement="top">Duplicate</sp-tooltip>
-                      </sp-action-button>
-                      <sp-action-button
                           slot="buttons"
                           label="Copy to folder"
                           ?disabled=${!this.onCopyToFolder}
@@ -225,9 +210,9 @@ class MasSelectionPanel extends LitElement {
                   </sp-action-button>`
                 : nothing}
             ${count > 0
-                ? html`<sp-action-button slot="buttons" label="Copy Code" @click=${this.handleCopyFragmentUrls}>
-                      <sp-icon-code slot="icon"></sp-icon-code>
-                      <sp-tooltip self-managed placement="top">Copy Code</sp-tooltip>
+                ? html`<sp-action-button slot="buttons" label="Copy Link" @click=${this.handleCopyFragmentUrls}>
+                      <sp-icon-link slot="icon"></sp-icon-link>
+                      <sp-tooltip self-managed placement="top">Copy Link</sp-tooltip>
                   </sp-action-button>`
                 : nothing}
         </sp-action-bar>`;
