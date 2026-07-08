@@ -256,7 +256,7 @@ export function generateCodeToUse(fragment, path, page, failMessage) {
         if (failMessage)
             Events.toast.emit({
                 variant: 'negative',
-                content: 'Failed to copy code to clipboard',
+                content: 'Failed to copy link to clipboard',
             });
         return [];
     }
