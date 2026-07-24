@@ -39,6 +39,8 @@ export const styles = css`
 
     .filters-container {
         display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .promotions-table {
@@ -88,6 +90,25 @@ export const styles = css`
         justify-content: center;
         background: rgba(255, 255, 255, 0.7);
         z-index: 10;
+    }
+
+    .surfaces-cell {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .surface-filter-popover {
+        padding: 12px;
+    }
+
+    .surface-filter-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 300px;
+        overflow-y: auto;
     }
 `;
 
