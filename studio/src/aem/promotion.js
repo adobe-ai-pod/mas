@@ -1,7 +1,12 @@
 import { FRAGMENT_STATUS } from '../constants.js';
 import { Fragment } from './fragment.js';
+import { parsePromotionSurfacesFieldValues } from '../promotions/promotion-editor-utils.js';
 
 export class Promotion extends Fragment {
+    get surfaces() {
+        return parsePromotionSurfacesFieldValues(this.getFieldValues('surfaces'));
+    }
+
     get isEvergreen() {
         return !this.getFieldValue('endDate');
     }
