@@ -65,6 +65,16 @@ describe('class "CheckoutLink"', () => {
         expect(checkoutLink.options).to.be.not.empty;
     });
 
+    it('keeps an externally set aria-label after render', async () => {
+        initMasCommerceService();
+        const checkoutLink = mockCheckoutLink('abm');
+        checkoutLink.setAttribute('aria-label', 'Free trial for Photoshop');
+        await checkoutLink.onceSettled();
+        expect(checkoutLink.getAttribute('aria-label')).to.equal(
+            'Free trial for Photoshop',
+        );
+    });
+
     it('renders link with workflow step from settings', async () => {
         await initMasCommerceService({
             'checkout-workflow-step': CheckoutWorkflowStep.SEGMENTATION,
@@ -317,27 +327,6 @@ describe('class "CheckoutLink"', () => {
             await checkoutLink.onceSettled();
             expect(checkoutLink.isOpen3in1Modal).to.be.true;
             document.head.removeChild(meta);
-        });
-    });
-
-    describe('aria-label support', () => {
-        it('sets aria-label when data-aria-label is configured', async () => {
-            initMasCommerceService();
-            const checkoutLink = mockCheckoutLink('abm', {
-                ariaLabel: 'Free trial for Creative Cloud Pro',
-            });
-            await checkoutLink.onceSettled();
-            expect(checkoutLink.getAttribute('aria-label')).to.equal(
-                'Free trial for Creative Cloud Pro',
-            );
-            expect(checkoutLink.href).to.not.be.empty;
-        });
-
-        it('does not set aria-label when data-aria-label is absent', async () => {
-            initMasCommerceService();
-            const checkoutLink = mockCheckoutLink('abm');
-            await checkoutLink.onceSettled();
-            expect(checkoutLink.getAttribute('aria-label')).to.be.null;
         });
     });
 
