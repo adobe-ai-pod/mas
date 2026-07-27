@@ -21,10 +21,6 @@ merch-card[variant="product"] [slot="callout-content"] > p:has(> .icon-button) {
   padding-inline-end: 36px;
 }
 
-merch-card[variant="product"] [slot="callout-content"] .icon-button {
-  margin: 1.5px 0 1.5px 8px;
-}
-
 merch-card[variant="product"] a.spectrum-Link--secondary {
   color: inherit;
 }
@@ -99,11 +95,16 @@ merch-card-collection.product merch-card {
     width: 100%;
   }
 
-.one-merch-card.section merch-card[variant="product"],
 .two-merch-cards.section merch-card[variant="product"],
 .three-merch-cards.section merch-card[variant="product"],
 .four-merch-cards.section merch-card[variant="product"] {
     width: auto;
+}
+
+.one-merch-card.section merch-card[variant="product"] {
+    width: auto;
+    max-width: var(--consonant-merch-card-product-width);
+    margin: 0 auto;
 }
 
 /* grid style for product */
@@ -147,9 +148,13 @@ merch-card[variant="product"] {
 }
 
 merch-card[variant="product"] .merch-short-description {
-    display: flex;
+    display: inline-block;
     align-items: center;
     gap: 4px;
+    font-size: 14px;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 21px;
 }
 
 merch-card[variant="product"] .merch-short-description .icon-button {

@@ -1566,6 +1566,7 @@ describe('customize promo variation', function () {
     const ACTIVE_PROJECT = {
         id: 'promo-proj-id',
         path: '/content/dam/mas/promotions/black-friday',
+        fragmentPaths: ['my-card'],
         defaultVariations: { 'my-card': PROMO_VARIATION },
         regionVariations: {},
     };
@@ -1590,6 +1591,33 @@ describe('customize promo variation', function () {
         expect(result.body.variationId).to.equal('promo-var-id');
         expect(result.body.fields.title).to.equal('Promo Title');
         expect(result.body.fields.badge).to.equal('PROMO');
+    });
+
+    it("should NOT merge promo variation when the fragment is not in the project's fragmentPaths (offers)", async function () {
+        // A variation fragment can exist under the promo project's variations folder for a card
+        // the project was never actually authorized to target via its fragments/offers field —
+        // e.g. leftover/stray content. Folder presence alone must not be sufficient authorization.
+        const projectNotTargetingThisCard = {
+            ...ACTIVE_PROJECT,
+            fragmentPaths: ['some-other-card'],
+        };
+        const rootFragment = {
+            id: 'root-id',
+            path: '/content/dam/mas/sandbox/en_US/my-card',
+            fields: { title: 'Original Title', badge: 'ORIGINAL' },
+            references: {},
+            referencesTree: [],
+        };
+
+        const result = await processWithPromos(
+            { ...FAKE_CONTEXT, fragmentPath: 'my-card', parsedLocale: 'en_US', body: rootFragment },
+            projectNotTargetingThisCard,
+        );
+
+        expect(result.status).to.equal(200);
+        expect(result.body.variationId).to.be.undefined;
+        expect(result.body.fields.title).to.equal('Original Title');
+        expect(result.body.fields.badge).to.equal('ORIGINAL');
     });
 
     it('should merge region variation over default when both exist', async function () {
@@ -1722,6 +1750,129 @@ describe('customize promo variation', function () {
         expect(result.body.variationId).to.equal('region-only-id');
         expect(result.body.fields.title).to.equal('Region Only Title');
         expect(result.body.fields.badge).to.equal('REGION');
+    });
+
+    it('should pick the geo-scoped sibling matching the request over an untagged (legacy) sibling', async function () {
+        const legacyVariation = {
+            id: 'legacy-var-id',
+            path: '/content/dam/mas/sandbox/en_US/promotions/black-friday/my-card',
+            fields: { title: 'Legacy Title', badge: 'LEGACY' },
+        };
+        const geoVariation = {
+            id: 'geo-var-id',
+            path: '/content/dam/mas/sandbox/en_US/promotions/black-friday/my-card-2',
+            fields: { title: 'Greece Title', badge: 'GEO', pznTags: ['mas:locale/en_GR'] },
+        };
+        const project = {
+            ...ACTIVE_PROJECT,
+            defaultVariations: { 'my-card': legacyVariation, 'my-card-2': geoVariation },
+            regionVariations: {},
+        };
+        const rootFragment = {
+            id: 'root-id',
+            path: '/content/dam/mas/sandbox/en_US/my-card',
+            fields: { title: 'Original Title', badge: 'ORIGINAL' },
+            references: {},
+            referencesTree: [],
+        };
+
+        const result = await processWithPromos(
+            {
+                ...FAKE_CONTEXT,
+                fragmentPath: 'my-card',
+                parsedLocale: 'en_US',
+                body: rootFragment,
+                locale: 'en_US',
+                country: 'GR',
+            },
+            project,
+        );
+
+        expect(result.status).to.equal(200);
+        expect(result.body.variationId).to.equal('geo-var-id');
+        expect(result.body.fields.title).to.equal('Greece Title');
+    });
+
+    it('should fall back to the untagged (legacy) sibling when no geo-scoped sibling matches the request', async function () {
+        const legacyVariation = {
+            id: 'legacy-var-id',
+            path: '/content/dam/mas/sandbox/en_US/promotions/black-friday/my-card',
+            fields: { title: 'Legacy Title', badge: 'LEGACY' },
+        };
+        const geoVariation = {
+            id: 'geo-var-id',
+            path: '/content/dam/mas/sandbox/en_US/promotions/black-friday/my-card-2',
+            fields: { title: 'Greece Title', badge: 'GEO', pznTags: ['mas:locale/en_GR'] },
+        };
+        const project = {
+            ...ACTIVE_PROJECT,
+            defaultVariations: { 'my-card': legacyVariation, 'my-card-2': geoVariation },
+            regionVariations: {},
+        };
+        const rootFragment = {
+            id: 'root-id',
+            path: '/content/dam/mas/sandbox/en_US/my-card',
+            fields: { title: 'Original Title', badge: 'ORIGINAL' },
+            references: {},
+            referencesTree: [],
+        };
+
+        const result = await processWithPromos(
+            {
+                ...FAKE_CONTEXT,
+                fragmentPath: 'my-card',
+                parsedLocale: 'en_US',
+                body: rootFragment,
+                locale: 'en_US',
+                country: 'FR',
+            },
+            project,
+        );
+
+        expect(result.status).to.equal(200);
+        expect(result.body.variationId).to.equal('legacy-var-id');
+        expect(result.body.fields.title).to.equal('Legacy Title');
+    });
+
+    it('should prefer a region-locale match over a country-only match among geo-scoped siblings', async function () {
+        const countryOnlyVariation = {
+            id: 'country-only-id',
+            path: '/content/dam/mas/sandbox/en_US/promotions/black-friday/my-card',
+            fields: { title: 'Country Only Title', pznTags: ['mas:country/GR'] },
+        };
+        const regionVariation = {
+            id: 'region-match-id',
+            path: '/content/dam/mas/sandbox/en_US/promotions/black-friday/my-card-2',
+            fields: { title: 'Region Match Title', pznTags: ['mas:locale/en_GR'] },
+        };
+        const project = {
+            ...ACTIVE_PROJECT,
+            defaultVariations: { 'my-card': countryOnlyVariation, 'my-card-2': regionVariation },
+            regionVariations: {},
+        };
+        const rootFragment = {
+            id: 'root-id',
+            path: '/content/dam/mas/sandbox/en_US/my-card',
+            fields: { title: 'Original Title', badge: 'ORIGINAL' },
+            references: {},
+            referencesTree: [],
+        };
+
+        const result = await processWithPromos(
+            {
+                ...FAKE_CONTEXT,
+                fragmentPath: 'my-card',
+                parsedLocale: 'en_US',
+                body: rootFragment,
+                locale: 'en_US',
+                country: 'GR',
+            },
+            project,
+        );
+
+        expect(result.status).to.equal(200);
+        expect(result.body.variationId).to.equal('region-match-id');
+        expect(result.body.fields.title).to.equal('Region Match Title');
     });
 });
 
@@ -2222,7 +2373,10 @@ describe('customize with multiple active promotion projects', function () {
         expect(result.body.promoProject).to.equal('proj-w1');
     });
 
-    it('variation and promoCode walks are independent — A supplies variation, B supplies promoCode', async function () {
+    it('selects the explicit-mapping project over a variation-only project, suppressing its variation', async function () {
+        // RPP ZA case: Regional project owns the osi mapping for the card & no variation,
+        // Intro project has a variation but no mapping for this offer+geo. Regional
+        // project must win, it has explicit mapping and unrelated variation is NOT applied
         const projectVariationOnly = {
             id: 'proj-var',
             path: '/content/dam/mas/promotions/proj-var',
@@ -2249,16 +2403,135 @@ describe('customize with multiple active promotion projects', function () {
             referencesTree: [],
         };
         const result = await processWithPromoProjects({ ...FAKE_CONTEXT, fragmentPath: 'card-x', body: rootFragment }, [
-            { project: projectVariationOnly, promoMap: { 'OSI-X': 'FROM-VAR-PROJECT' }, fragmentPaths: new Set() },
+            // proj-var targets card-x and has a variation, but supplies no explicit mapping for OSI-X.
+            { project: projectVariationOnly, promoMap: {}, fragmentPaths: new Set(['card-x']) },
+            // proj-promo has an explicit OSI-X entry, so it is selected as the single winning project.
             { project: projectPromoOnly, promoMap: { 'OSI-X': 'FROM-PROMO-PROJECT' }, fragmentPaths: new Set(['card-x']) },
         ]);
         expect(result.status).to.equal(200);
-        expect(result.body.variationId).to.equal('var-x');
+        // proj-promo wins: its promoCode applies and, because it has no variation, none is merged.
         expect(result.body.fields.promoCode).to.equal('FROM-PROMO-PROJECT');
-        // Variation and promoCode provenance are tracked on separate fields, so two different
-        // projects touching the same fragment are both recorded rather than clobbering each other.
-        expect(result.body.promoVariationProject).to.equal('proj-var');
         expect(result.body.promoProject).to.equal('proj-promo');
+        expect(result.body.variationId).to.equal(undefined);
+        expect(result.body.promoVariationProject).to.equal(undefined);
+    });
+
+    it('selects a project by an explicit OSI substitution when it has no promoMap entry', async function () {
+        // The winning project can qualify via an OSI substitution alone (no promoCode), which is the
+        // real regional-pricing case. It wins over a variation-only project and, having no variation,
+        // suppresses it.
+        const projectSubstituteOnly = {
+            id: 'proj-sub',
+            path: '/content/dam/mas/promotions/proj-sub',
+            defaultVariations: {},
+            regionVariations: {},
+        };
+        const projectVariationOnly = {
+            id: 'proj-var',
+            path: '/content/dam/mas/promotions/proj-var',
+            defaultVariations: {
+                'card-x': {
+                    id: 'var-x',
+                    path: '/content/dam/mas/sandbox/en_US/promotions/proj-var/card-x',
+                    fields: { title: 'Variation-only project' },
+                },
+            },
+            regionVariations: {},
+        };
+        const rootFragment = {
+            id: 'card-x',
+            path: '/content/dam/mas/sandbox/en_US/card-x',
+            fields: { osi: 'OSI-X', title: 'Original X' },
+            references: {},
+            referencesTree: [],
+        };
+        const result = await processWithPromoProjects({ ...FAKE_CONTEXT, fragmentPath: 'card-x', body: rootFragment }, [
+            { project: projectVariationOnly, promoMap: {}, fragmentPaths: new Set(['card-x']) },
+            {
+                project: projectSubstituteOnly,
+                promoMap: {},
+                substituteMap: { 'OSI-X': 'OSI-SUBSTITUTE' },
+                fragmentPaths: new Set(['card-x']),
+            },
+        ]);
+        expect(result.status).to.equal(200);
+        expect(result.body.variationId).to.equal(undefined);
+        expect(result.body.promoVariationProject).to.equal(undefined);
+        // OSI-substitution-only project still gets stamped so data-promotion-project is set.
+        expect(result.body.promoProject).to.equal('proj-sub');
+    });
+
+    it('selects the first targeting project for a fragment with no osi', async function () {
+        // A fragment without an osi can have no explicit mapping, so the first targeting project is
+        // selected and its variation applies.
+        const projectVariationOnly = {
+            id: 'proj-var',
+            path: '/content/dam/mas/promotions/proj-var',
+            defaultVariations: {
+                'card-x': {
+                    id: 'var-x',
+                    path: '/content/dam/mas/sandbox/en_US/promotions/proj-var/card-x',
+                    fields: { title: 'Variation-only project' },
+                },
+            },
+            regionVariations: {},
+        };
+        const rootFragment = {
+            id: 'card-x',
+            path: '/content/dam/mas/sandbox/en_US/card-x',
+            fields: { title: 'Original X' },
+            references: {},
+            referencesTree: [],
+        };
+        const result = await processWithPromoProjects({ ...FAKE_CONTEXT, fragmentPath: 'card-x', body: rootFragment }, [
+            { project: projectVariationOnly, promoMap: {}, fragmentPaths: new Set(['card-x']) },
+        ]);
+        expect(result.status).to.equal(200);
+        expect(result.body.variationId).to.equal('var-x');
+        expect(result.body.promoProject).to.equal('proj-var');
+    });
+
+    it('selects a wildcard-promo project over a mapping-less project when neither has an explicit entry', async function () {
+        // Explicit > wildcard > nothing: with no explicit-mapping project, a blanket wildcard promo
+        // should still be applied rather than dropped (mirrors promomweb winning over promomweb2).
+        // The wildcard project has no variation, so the variation-only project's variation is suppressed.
+        const projectVariationOnly = {
+            id: 'proj-var',
+            path: '/content/dam/mas/promotions/proj-var',
+            defaultVariations: {
+                'card-x': {
+                    id: 'var-x',
+                    path: '/content/dam/mas/sandbox/en_US/promotions/proj-var/card-x',
+                    fields: { title: 'Variation-only project' },
+                },
+            },
+            regionVariations: {},
+        };
+        const projectWildcard = {
+            id: 'proj-blanket',
+            path: '/content/dam/mas/promotions/proj-blanket',
+            defaultVariations: {},
+            regionVariations: {},
+        };
+        const rootFragment = {
+            id: 'card-x',
+            path: '/content/dam/mas/sandbox/en_US/card-x',
+            fields: { osi: 'OSI-X', title: 'Original X' },
+            references: {},
+            referencesTree: [],
+        };
+        const result = await processWithPromoProjects({ ...FAKE_CONTEXT, fragmentPath: 'card-x', body: rootFragment }, [
+            // proj-var sorts first and has a variation, but no promo mapping at all.
+            { project: projectVariationOnly, promoMap: {}, fragmentPaths: new Set(['card-x']) },
+            // proj-blanket only has a wildcard promo, which must win over the mapping-less project.
+            { project: projectWildcard, promoMap: { '*': 'SUMMER25' }, fragmentPaths: new Set(['card-x']) },
+        ]);
+        expect(result.status).to.equal(200);
+        expect(result.body.fields.promoCode).to.equal('SUMMER25');
+        expect(result.body.promoProject).to.equal('proj-blanket');
+        // The wildcard project has no variation, so the variation-only project's variation is not applied.
+        expect(result.body.variationId).to.equal(undefined);
+        expect(result.body.promoVariationProject).to.equal(undefined);
     });
 
     it('stamps promoVariationProject from the variation project when no promoCode is applied', async function () {
@@ -2282,12 +2555,14 @@ describe('customize with multiple active promotion projects', function () {
             referencesTree: [],
         };
         const result = await processWithPromoProjects({ ...FAKE_CONTEXT, fragmentPath: 'card-y', body: rootFragment }, [
-            { project: projectVarOnly, promoMap: {}, fragmentPaths: new Set() },
+            { project: projectVarOnly, promoMap: {}, fragmentPaths: new Set(['card-y']) },
         ]);
         expect(result.status).to.equal(200);
         expect(result.body.variationId).to.equal('var-y');
         expect(result.body.fields.promoCode).to.be.undefined;
-        expect(result.body.promoProject).to.be.undefined;
+        // The selected project is stamped as promoProject even without a promoCode, so
+        // data-promotion-project is set for any targeted card.
+        expect(result.body.promoProject).to.equal('proj-var-only');
         expect(result.body.promoVariationProject).to.equal('proj-var-only');
     });
 

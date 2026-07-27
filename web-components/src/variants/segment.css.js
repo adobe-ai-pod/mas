@@ -16,6 +16,10 @@ merch-card[variant="segment"] {
   grid-template-columns: minmax(276px, var(--consonant-merch-card-segment-width));
 }
 
+.one-merch-card.section merch-card[variant="segment"] {
+    margin: 0 auto;
+}
+
 .three-merch-cards.section merch-card[variant="segment"],
 .four-merch-cards.section merch-card[variant="segment"] {
     max-width: 302px;
@@ -67,10 +71,6 @@ merch-card[variant="segment"] [slot="callout-content"] > p:has(> .icon-button) {
   padding-inline-end: 36px;
 }
 
-merch-card[variant="segment"] [slot="callout-content"] .icon-button {
-  margin: 1.5px 0 1.5px 8px;
-}
-
 merch-card[variant="segment"] a.spectrum-Link--secondary {
   color: inherit;
 }
@@ -86,6 +86,10 @@ merch-card[variant="segment"][id] span[data-template="legal"] {
 
 merch-card[variant="segment"][id] .price-unit-type:not(.disabled)::before {
     content: "";
+}
+
+merch-card[variant="segment"][id] .price-legal .price-unit-type:not(.disabled)::after {
+  content: "\\00a0";
 }
 
 merch-card[variant="segment"] [slot="footer"] a.con-button.primary {
