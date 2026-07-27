@@ -17,7 +17,6 @@ const CHECKOUT_PARAM_VALUE_MAPPING = {
 };
 
 export function createCheckoutElement(Class, options = {}, innerHTML = '') {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const service = getService();
     if (!service) return null;
     const {
@@ -51,6 +50,7 @@ export function createCheckoutElement(Class, options = {}, innerHTML = '') {
         wcsOsi,
         extraOptions,
         analyticsId,
+        ariaLabel: options.ariaLabel,
     });
     if (innerHTML)
         element.innerHTML = `<span style="pointer-events: none;">${innerHTML}</span>`;
@@ -120,6 +120,7 @@ export function CheckoutMixin(Base) {
 
         static get observedAttributes() {
             return [
+                'data-aria-label',
                 'data-checkout-workflow',
                 'data-checkout-workflow-step',
                 'data-extra-options',
@@ -136,7 +137,6 @@ export function CheckoutMixin(Base) {
         }
 
         async render(overrides = {}) {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             const service = getService();
             if (!service) return false;
             if (!this.dataset.imsCountry) {
@@ -180,13 +180,20 @@ export function CheckoutMixin(Base) {
                 { ...extraOptions, ...options },
                 this,
             );
-            return this.renderOffers(
+            const result = this.renderOffers(
                 offers.flat(),
                 options,
                 {},
                 checkoutAction,
                 version,
             );
+            const ariaLabel = this.dataset.ariaLabel;
+            if (ariaLabel) {
+                this.setAttribute('aria-label', ariaLabel);
+            } else {
+                this.removeAttribute('aria-label');
+            }
+            return result;
         }
 
         /**
@@ -204,7 +211,6 @@ export function CheckoutMixin(Base) {
             checkoutAction = undefined,
             version = undefined,
         ) {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             const service = getService();
             if (!service) return false;
             const extraOptions = JSON.parse(this.dataset.extraOptions ?? '{}');
@@ -261,7 +267,6 @@ export function CheckoutMixin(Base) {
         }
 
         updateOptions(options = {}) {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             const service = getService();
             if (!service) return false;
             const {

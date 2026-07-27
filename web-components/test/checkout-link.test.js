@@ -320,6 +320,27 @@ describe('class "CheckoutLink"', () => {
         });
     });
 
+    describe('aria-label support', () => {
+        it('sets aria-label when data-aria-label is configured', async () => {
+            initMasCommerceService();
+            const checkoutLink = mockCheckoutLink('abm', {
+                ariaLabel: 'Free trial for Creative Cloud Pro',
+            });
+            await checkoutLink.onceSettled();
+            expect(checkoutLink.getAttribute('aria-label')).to.equal(
+                'Free trial for Creative Cloud Pro',
+            );
+            expect(checkoutLink.href).to.not.be.empty;
+        });
+
+        it('does not set aria-label when data-aria-label is absent', async () => {
+            initMasCommerceService();
+            const checkoutLink = mockCheckoutLink('abm');
+            await checkoutLink.onceSettled();
+            expect(checkoutLink.getAttribute('aria-label')).to.be.null;
+        });
+    });
+
     describe('logged-in features', () => {
         it('renders download link', async () => {
             mockIms('US');
