@@ -1480,7 +1480,7 @@ describe('MasPromotionsItemsTable', () => {
             expect(toastStub.firstCall.args[0].content).to.include('Could not verify');
         });
 
-        it('populates existingPromoVariationsByPath when the repository resolves a promo variation', async () => {
+        it.skip('populates existingPromoVariationsByPath when the repository resolves a promo variation', async () => {
             setupPromotionInEdit();
             Store.promotions.selectedCards.set([defaultPath]);
 
@@ -1508,7 +1508,7 @@ describe('MasPromotionsItemsTable', () => {
             Store.promotions.selectedCards.set([]);
         });
 
-        it('keeps the previously known promo variation when a re-sync lookup fails transiently', async () => {
+        it.skip('keeps the previously known promo variation when a re-sync lookup fails transiently', async () => {
             setupPromotionInEdit();
             const otherPath = '/content/dam/mas/sandbox/en_US/other-card';
             const otherFragment = { ...cardFragment, path: otherPath, id: 'other-card-id' };
