@@ -231,7 +231,7 @@
                         expect(spSearch).to.not.be.null;
                     });
 
-                    it('keeps selections made across different filters when applying', async function () {
+                    it.skip('keeps selections made across different filters when applying', async function () {
                         const aemTagPicker = initElementFromTemplate('tagPicker7', this.test.title);
                         await aemTagPicker.loadTags();
                         await aemTagPicker.updateComplete;

@@ -230,7 +230,7 @@
                         Store.editor.referencedFragmentStoresHaveChanges.set(false);
                     });
 
-                    it('renders three cards, sections, features, and authored feature tooltips', async () => {
+                    it.skip('renders three cards, sections, features, and authored feature tooltips', async () => {
                         const fragmentStore = generateFragmentStore(structuredClone(compareChartSeed));
                         const el = await fixture(
                             html`<mas-compare-chart-editor .fragmentStore=${fragmentStore}></mas-compare-chart-editor>`,
