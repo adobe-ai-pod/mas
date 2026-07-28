@@ -6,8 +6,8 @@
 regeneration:
     max_candidates: 5
 
-# Checked-in build outputs that ship with any src change. dist-sync requires
-# them, so the candidate scope check must not reject them as unplanned.
+# Checked-in build outputs that ship with any src change. dist-sync rebuilds
+# and compares them; the adversary skips them by default.
 generated:
     - 'web-components/dist/**'
     - 'web-components/docs/**'
@@ -17,6 +17,17 @@ generated:
 provision: npm ci
 
 gates:
+    lockfiles:
+        template: protected_paths
+        name: Dependency lockfiles
+        # An npm install during a code change rewrites these as a side effect.
+        # Dependency bumps are their own ticket.
+        paths:
+            - 'package-lock.json'
+            - '*/package-lock.json'
+        blocking: true
+        failure_route: escalate_to_human
+
     lint:
         template: command
         name: ESLint (changed files)
