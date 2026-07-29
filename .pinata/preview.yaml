@@ -43,12 +43,18 @@ capture_hosts:
       auth: ims
     - host: '--da-cc--adobecom.aem.page'
       auth: da-cc-token
+    # Lingo fragments / M@S DC pages are pasted on da-dc (MWPW-195301) — same
+    # token gating and mint self-heal as da-cc.
+    - host: '--da-dc--adobecom.aem.page'
+      auth: da-dc-token
     - host: '--mas--adobecom.aem.live'
       capture_on: '--mas--adobecom.aem.page'
     - host: '--mas-pinata--adobecom.aem.live'
       capture_on: '--mas-pinata--adobecom.aem.page'
     - host: '--da-cc--adobecom.aem.live'
       capture_on: '--da-cc--adobecom.aem.page'
+    - host: '--da-dc--adobecom.aem.live'
+      capture_on: '--da-dc--adobecom.aem.page'
 
 # IMS login for Studio surfaces, same account and flow already verified on the
 # milo tenant. Dormant until a capture_hosts entry attaches it via auth: ims.
@@ -57,6 +63,13 @@ auth_profiles:
         token_env: AEM_SITE_TOKEN_DA_CC
         header: 'authorization: token {token}'
         # expired token self-heals: the engine re-mints via the ims login in-run
+        mint:
+            login: ims
+    da-dc-token:
+        token_env: AEM_SITE_TOKEN_DA_DC
+        header: 'authorization: token {token}'
+        # expired/missing token self-heals the same way; the mint's audience
+        # check binds the fresh token to the da-dc host it is used for.
         mint:
             login: ims
     ims:
