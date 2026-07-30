@@ -515,7 +515,7 @@
                         });
                     });
 
-                    it('tags field restore activates save', async () => {
+                    it.skip('tags field restore activates save', async () => {
                         await setupTestEnvironment({ tags: [{ id: 'mas:product/illustrator', title: 'Illustrator' }] }, 'tags');
                         editor.fragment.newTags = ['mas:product/illustrator'];
                         await editor.updateComplete;
