@@ -1100,16 +1100,23 @@ describe('MasSideNav – Copy Field', () => {
     describe('updateVariationLoadingState', () => {
         let contextStore;
         let contextIsVariationStub;
+        let appendedNodes;
 
         beforeEach(() => {
             contextStore = Store.fragmentEditor.editorContext;
             contextIsVariationStub = sandbox.stub(contextStore, 'isVariation').returns(false);
             contextStore.parentFetchPromise = null;
+            appendedNodes = [];
         });
 
         afterEach(() => {
             contextStore.parentFetchPromise = null;
             contextIsVariationStub.restore();
+            // Tests below append `el` (plus a synthetic editor host) to document.body; if an
+            // assertion throws before their manual .remove() calls, those nodes - and el's live
+            // Store subscriptions - would otherwise linger for the rest of the file's tests.
+            appendedNodes.forEach((node) => node.remove());
+            appendedNodes = [];
         });
 
         it('should resolve and cache price preview when merch-card dispatches mas:ready', async () => {
@@ -1118,6 +1125,7 @@ describe('MasSideNav – Copy Field', () => {
             const card = document.createElement('merch-card');
             editor.append(card);
             document.body.append(el, editor);
+            appendedNodes.push(el, editor);
 
             const price = document.createElement('span');
             price.setAttribute('is', 'inline-price');
@@ -1144,6 +1152,7 @@ describe('MasSideNav – Copy Field', () => {
             const card = document.createElement('merch-card');
             editor.append(card);
             document.body.append(el, editor);
+            appendedNodes.push(el, editor);
 
             const unresolved = document.createElement('span');
             unresolved.setAttribute('is', 'inline-price');
@@ -1168,6 +1177,7 @@ describe('MasSideNav – Copy Field', () => {
             const editor = document.createElement('div');
             editor.fragment = { id: 'frag-123' };
             document.body.append(el, editor);
+            appendedNodes.push(el, editor);
 
             let currentCard = null;
             sandbox.stub(editor, 'querySelector').callsFake((selector) => (selector === 'merch-card' ? currentCard : null));
