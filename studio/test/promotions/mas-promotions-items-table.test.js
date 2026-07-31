@@ -1,6 +1,6 @@
 import { expect } from '@esm-bundle/chai';
 import { html, LitElement } from 'lit';
-import { fixture, fixtureCleanup } from '@open-wc/testing-helpers/pure';
+import { fixture, fixtureCleanup, waitUntil } from '@open-wc/testing-helpers/pure';
 import sinon from 'sinon';
 import Store from '../../src/store.js';
 import { setItemsSelectionStore } from '../../src/common/items-selection-store.js';
@@ -993,7 +993,10 @@ describe('MasPromotionsItemsTable', () => {
             const row = selectItemsTable.shadowRoot.querySelector('mas-collapsible-table-row');
             await row.updateComplete;
             findCreateMenuItem(el).dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
-            await new Promise((r) => setTimeout(r, 20));
+            // #createPromoVariation flips createPromoVariationLoading synchronously before its
+            // first await, so polling it (rather than sleeping a guessed duration) tracks the
+            // real completion of the promo-variation lookup that populates the dialog state.
+            await waitUntil(() => !el.createPromoVariationLoading, 'promo variation lookup did not settle');
             await el.updateComplete;
         };
 
@@ -1199,7 +1202,14 @@ describe('MasPromotionsItemsTable', () => {
             }));
             document.body.appendChild(el);
             await el.updateComplete;
-            await new Promise((r) => setTimeout(r, 80));
+            // #syncExistingPromoVariations runs fire-and-forget off updated() and sets this map
+            // as its very last step, so its presence for defaultPath is the real signal that the
+            // sibling-variation probe (and the geos it derives) has finished, instead of guessing
+            // how long the async AEM lookups take.
+            await waitUntil(
+                () => el.existingPromoVariationGeosByPath.has(defaultPath),
+                'existing promo variation sync did not complete',
+            );
             await el.updateComplete;
             const selectItemsTable = el.shadowRoot.querySelector('mas-select-items-table');
             await selectItemsTable.updateComplete;
