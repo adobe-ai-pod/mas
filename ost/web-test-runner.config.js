@@ -12,6 +12,11 @@ export default {
             timeout: Number(process.env.WTR_TEST_TIMEOUT ?? 5000),
         },
     },
+    // Duration telemetry: the console reporter only prints the aggregate suite
+    // duration, not per-test timings. If a specific test starts tripping this
+    // timeout under load again, run it standalone with a JSON/duration-capable
+    // reporter to see which test is slow instead of guessing from the aggregate
+    // number.
     plugins: [esbuildPlugin({ js: true, define: { 'process.env.NODE_ENV': '"production"' } })],
     testRunnerHtml: (testFramework) =>
         `<html>
