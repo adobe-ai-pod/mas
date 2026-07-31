@@ -164,17 +164,10 @@ runTests(async () => {
         });
 
         it('should update price, cta', async () => {
-            const {
-                merchCard,
-                merchOfferSelect,
-                merchQuantitySelect,
-                pickerButton,
-                options,
-            } = await renderCard('card2');
+            const { merchCard, merchOfferSelect, pickerButton, options } =
+                await renderCard('card2');
             pickerButton.click();
-            // toggleMenu() flips the `closed` property synchronously; wait for the
-            // resulting re-render instead of a fixed delay before targeting an option.
-            await merchQuantitySelect.updateComplete;
+            await delay(100);
             options[2].click();
             // Selecting a quantity re-syncs price/cta from the matching offer; wait for
             // the price to actually reach the new value rather than sleeping a guess.
