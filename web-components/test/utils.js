@@ -6,6 +6,24 @@ window.masPriceLiterals = priceLiteralsJson.data;
 export const delay = (ms = 0) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Polls a predicate until it returns a truthy value instead of sleeping a guessed
+ * duration. Useful for waiting on rendering that happens outside a single
+ * updateComplete cycle (e.g. a descendant custom element's own async work).
+ */
+export const waitUntil = async (predicate, { timeout = 2000, interval = 20 } = {}) => {
+    const start = Date.now();
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        const result = await predicate();
+        if (result) return result;
+        if (Date.now() - start >= timeout) {
+            throw new Error('waitUntil timed out');
+        }
+        await delay(interval);
+    }
+};
+
 export const keyDown = async (key) => {
     document.activeElement.dispatchEvent(
         new KeyboardEvent('keydown', {

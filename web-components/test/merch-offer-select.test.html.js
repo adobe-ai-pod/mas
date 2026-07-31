@@ -4,7 +4,7 @@ import { expect } from '@esm-bundle/chai';
 import { mockLana } from './mocks/lana.js';
 import { mockFetch } from './mocks/fetch.js';
 
-import { delay, toggleMobile, toggleDesktop } from './utils.js';
+import { delay, toggleMobile, toggleDesktop, waitUntil } from './utils.js';
 import { withWcs } from './mocks/wcs.js';
 import '../src/mas.js';
 
@@ -50,7 +50,13 @@ runTests(async () => {
     describe('merch-offer-select web component', async () => {
         it('should exist, autoselect first offer and render price and cta', async () => {
             const { merchCard, merchOfferSelect } = await renderCard('card1');
-            await delay(200);
+            // Price text comes from each merch-offer's own inline-price element
+            // resolving its (mocked) WCS fetch and rendering, which isn't captured
+            // by merchOfferSelect's updateComplete. Poll for it instead of guessing
+            // how long that takes.
+            await waitUntil(
+                () => getDynamicElements(merchCard, merchOfferSelect).price?.innerText,
+            );
             const { price, cta, description, badge } = getDynamicElements(
                 merchCard,
                 merchOfferSelect,
@@ -158,12 +164,25 @@ runTests(async () => {
         });
 
         it('should update price, cta', async () => {
-            const { merchCard, merchOfferSelect, pickerButton, options } =
-                await renderCard('card2');
+            const {
+                merchCard,
+                merchOfferSelect,
+                merchQuantitySelect,
+                pickerButton,
+                options,
+            } = await renderCard('card2');
             pickerButton.click();
-            await delay(100);
+            // toggleMenu() flips the `closed` property synchronously; wait for the
+            // resulting re-render instead of a fixed delay before targeting an option.
+            await merchQuantitySelect.updateComplete;
             options[2].click();
-            await delay(100);
+            // Selecting a quantity re-syncs price/cta from the matching offer; wait for
+            // the price to actually reach the new value rather than sleeping a guess.
+            await waitUntil(
+                () =>
+                    getDynamicElements(merchCard, merchOfferSelect).price
+                        ?.innerText === 'US$82.49/mo',
+            );
             const { price, cta } = getDynamicElements(
                 merchCard,
                 merchOfferSelect,
