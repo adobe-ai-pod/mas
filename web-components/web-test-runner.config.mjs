@@ -34,7 +34,8 @@ export default {
     },
     testFramework: {
         config: {
-            timeout: 10000, // timeout in milliseconds
+            // timeout in milliseconds; override with WTR_TEST_TIMEOUT on loaded dev boxes.
+            timeout: Number(process.env.WTR_TEST_TIMEOUT ?? 10000),
         },
     },
     plugins: [
@@ -49,7 +50,9 @@ export default {
             },
         }),
     ],
-    port: 2023,
+    // Distinct from studio's and ost's default ports so all runners can coexist locally.
+    port: Number(process.env.WTR_PORT_WC ?? 18203),
+    concurrency: Number(process.env.WTR_CONCURRENCY ?? 2),
     reporters: [
         defaultReporter({ reportTestResults: true, reportTestProgress: true }),
     ],

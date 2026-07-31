@@ -59,11 +59,16 @@ export default {
         }),
     ],
     nodeResolve: true,
-    // Distinct from web-components' 2023 so both runners can coexist locally.
-    port: 2024,
+    // Moved off port 2024: that overlaps a port the harness engine's own local
+    // services use, which caused a real shadowing incident (2026-07-30). 18203-18205
+    // is an adjacent, currently-unclaimed range (web-components=18203, studio=18204,
+    // ost=18205); override with WTR_PORT_STUDIO if it collides with something else.
+    port: Number(process.env.WTR_PORT_STUDIO ?? 18204),
+    concurrency: Number(process.env.WTR_CONCURRENCY ?? 2),
     testFramework: {
         config: {
-            timeout: 5000,
+            // Keep the default tight in CI; loaded dev boxes can raise it via WTR_TEST_TIMEOUT.
+            timeout: Number(process.env.WTR_TEST_TIMEOUT ?? 5000),
         },
     },
     testRunnerHtml,
