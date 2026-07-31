@@ -285,6 +285,11 @@
                         await el.updateComplete;
                         let chart;
                         for (let i = 0; i < 10; i += 1) {
+                            // Without awaiting updateComplete here, nothing yields to let el's
+                            // render cycle progress, so every iteration reads the same stale
+                            // state - this only "passed" by luck when prior awaits happened to
+                            // leave the DOM already settled.
+                            await el.updateComplete;
                             chart = el.querySelector('[slot="compare-chart-preview"] mas-compare-chart');
                             if (chart?.querySelector(':scope > aem-fragment')) break;
                         }
