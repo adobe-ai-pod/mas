@@ -64,6 +64,14 @@
                         editor.fragmentStore = new FragmentStore(new Fragment(collectionFragment));
                         document.querySelector('main sp-theme').appendChild(editor);
                         await editor.updateComplete;
+                        // update() kicks off initFragmentReferencesMap() fire-and-forget; it does
+                        // its own async fragment-cache lookups and calls requestUpdate() when it
+                        // resolves, so a single updateComplete can settle before that work (and the
+                        // re-render it triggers) is done. Await it directly, then flush the render
+                        // it schedules, before asserting/tearing down so nothing bleeds into the
+                        // next test.
+                        await editor.initFragmentReferencesMap();
+                        await editor.updateComplete;
                         expect(editor).to.exist;
                         editor.remove();
                     });
