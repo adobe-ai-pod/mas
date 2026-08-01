@@ -189,6 +189,24 @@ surfaces:
           - /web-components/docs/spectrum.css
           - /web-components/docs/styles.css
 
+    # M@S Studio, a hash-routed app on studio.html. mas.adobe.com is an own
+    # host, so the capture serves the diff-applied worktree with the author
+    # proxy on stage (never production content); the ims login rides the
+    # mas.adobe.com capture-host entry. nala is the e2e suite's content
+    # folder, so the grid always has real cards to open.
+    - id: studio-content
+      url: https://mas.adobe.com/studio.html#page=content&path=nala
+      description: >-
+          M@S Studio authoring app on the content grid of the nala folder,
+          real stage cards. Double-clicking a card opens the merch card
+          editor and its fields: tag pickers, prices, OST links, variant
+          controls. Pick for any studio/ change — editors, fields, dialogs,
+          pickers, Studio chrome.
+      match: 'studio/*'
+      requires:
+          - /studio/libs/swc.js
+          - /web-components/dist/mas.js
+
     # Mined from adobecom/mas merged PR test urls (full history, 745 PRs
     # 2024-06 to 2026-07; each probed HTTP 200, public, never a /drafts/ page).
     # Consumer pages stay on .aem.live, their .aem.page previews are ims gated.
