@@ -206,14 +206,14 @@ surfaces:
     # M@S Studio, a hash-routed app on studio.html. mas.adobe.com is an own
     # host, so the capture serves the diff-applied worktree with the author
     # proxy on stage (never production content); the ims login rides the
-    # mas.adobe.com capture-host entry. nala is the e2e suite's content
+    # mas.adobe.com capture-host entry. sandbox is the designated testing
     # folder, so the grid always has real cards to open.
     # aem.env=stage repeated here so NON-local rungs (branch preview) also pin
     # Studio to the stage author instead of its prod default.
     - id: studio-content
-      url: https://mas.adobe.com/studio.html?aem.env=stage#page=content&path=nala
+      url: https://mas.adobe.com/studio.html?aem.env=stage#page=content&path=sandbox
       description: >-
-          M@S Studio authoring app on the content grid of the nala folder,
+          M@S Studio authoring app on the content grid of the sandbox folder,
           real stage cards. Double-clicking a card opens the merch card
           editor and its fields: tag pickers, prices, OST links, variant
           controls. Pick for any studio/ change — editors, fields, dialogs,
