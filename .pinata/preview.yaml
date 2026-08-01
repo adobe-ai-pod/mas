@@ -78,6 +78,15 @@ auth_profiles:
             password_env: IMS_PASS
         idp_hosts: [auth.services.adobe.com, ims-na1.adobelogin.com]
         steps:
+            # Studio signs in via a client-side imslib redirect: the page is
+            # still on its own origin when the steps start, and the fill guard
+            # (rightly) refuses to type credentials off the idp hosts. Wait
+            # for the SUSI form to exist so the redirect has landed before the
+            # first fill. Optional: server-redirecting hosts are already past
+            # this, and a silent-SSO session never shows the form at all.
+            - wait_for: '#EmailPage-EmailField'
+              optional: true
+              timeout_ms: 60000
             - fill: '#EmailPage-EmailField'
               value_from: username
               timeout_ms: 45000
