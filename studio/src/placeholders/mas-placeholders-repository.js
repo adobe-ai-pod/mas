@@ -13,6 +13,15 @@ import {
     TAG_STATUS_DRAFT,
 } from '../constants.js';
 
+export const PLACEHOLDER_REFERENCES_TIMEOUT_MS = 15000;
+
+const REFERENCE_SEARCH_MODEL_IDS = [
+    'L2NvbmYvbWFzL3NldHRpbmdzL2RhbS9jZm0vbW9kZWxzL2NvbGxlY3Rpb24',
+    'L2NvbmYvbWFzL3NldHRpbmdzL2RhbS9jZm0vbW9kZWxzL2NhcmQ',
+    DICTIONARY_ENTRY_MODEL_ID,
+    DICTIONARY_INDEX_MODEL_ID,
+];
+
 function getRepository() {
     return document.querySelector('mas-repository');
 }
@@ -359,6 +368,56 @@ export async function createPlaceholder(placeholder) {
         repo.processError(error, 'Failed to create placeholder.');
         return false;
     }
+}
+
+/**
+ * Searches for fragments (cards, collections, placeholders) that reference the given placeholder key.
+ * Searches both the current surface path and the ACOM path.
+ * @param {Placeholder} placeholder
+ * @param {AbortController} [abortController]
+ * @returns {Promise<{references: Fragment[], elapsed: number}>}
+ */
+export async function findPlaceholderReferences(placeholder, abortController) {
+    const repo = getRepository();
+    const start = Date.now();
+    const key = placeholder?.key;
+    if (!key) return { references: [], elapsed: 0 };
+
+    const surface = Store.surface();
+    const locale = Store.localeOrRegion();
+
+    const searchPaths = [];
+    if (surface) searchPaths.push(`${ROOT_PATH}/${surface}/${locale}`);
+    if (surface !== SURFACES.ACOM.name) searchPaths.push(`${ROOT_PATH}/${SURFACES.ACOM.name}/${locale}`);
+
+    const seen = new Set();
+    const references = [];
+
+    for (const searchPath of searchPaths) {
+        try {
+            const cursor = repo.aem.sites.cf.fragments.search(
+                {
+                    path: searchPath,
+                    query: key,
+                    modelIds: REFERENCE_SEARCH_MODEL_IDS,
+                },
+                null,
+                abortController,
+            );
+            for await (const page of cursor) {
+                for await (const item of page) {
+                    if (!seen.has(item.id)) {
+                        seen.add(item.id);
+                        references.push(item);
+                    }
+                }
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') break;
+        }
+    }
+
+    return { references, elapsed: Date.now() - start };
 }
 
 export async function publishPlaceholder(placeholder) {

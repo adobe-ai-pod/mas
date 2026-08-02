@@ -22,6 +22,8 @@ import {
     clearDictionaryCache,
     loadPlaceholders,
     loadPreviewPlaceholders,
+    findPlaceholderReferences,
+    PLACEHOLDER_REFERENCES_TIMEOUT_MS,
 } from '../../src/placeholders/mas-placeholders-repository.js';
 
 const mockFragmentCache = {
@@ -656,6 +658,73 @@ describe('mas-placeholders-repository', () => {
             repo.searchFragmentList = sandbox.stub();
             await loadPlaceholders();
             expect(repo.searchFragmentList.called).to.be.false;
+        });
+    });
+
+    describe('findPlaceholderReferences', () => {
+        function makeSearchStub(pageItems) {
+            return sandbox.stub().callsFake(async function* () {
+                yield (async function* () {
+                    for (const item of pageItems) yield item;
+                })();
+            });
+        }
+
+        beforeEach(() => {
+            Store.search.set({ path: 'sandbox', query: '' });
+            Store.filters.set({ locale: 'en_US' });
+        });
+
+        it('returns empty references and elapsed when placeholder key is missing', async () => {
+            const result = await findPlaceholderReferences({});
+            expect(result.references).to.deep.equal([]);
+            expect(result.elapsed).to.equal(0);
+        });
+
+        it('returns matching references from the surface search path', async () => {
+            const ref = createFragment({ id: 'card-1', path: `${ROOT_PATH}/sandbox/en_US/card`, title: 'My Card' });
+            repo.aem.sites.cf.fragments.search = makeSearchStub([ref]);
+
+            const placeholder = { key: 'save-today' };
+            const { references } = await findPlaceholderReferences(placeholder);
+
+            expect(references).to.have.lengthOf(1);
+            expect(references[0].id).to.equal('card-1');
+        });
+
+        it('deduplicates fragments returned from multiple search paths', async () => {
+            const ref = createFragment({ id: 'card-1', path: `${ROOT_PATH}/sandbox/en_US/card`, title: 'My Card' });
+            repo.aem.sites.cf.fragments.search = makeSearchStub([ref]);
+
+            const placeholder = { key: 'save-today' };
+            const { references } = await findPlaceholderReferences(placeholder);
+
+            expect(references.filter((r) => r.id === 'card-1')).to.have.lengthOf(1);
+        });
+
+        it('returns empty references when none are found', async () => {
+            repo.aem.sites.cf.fragments.search = makeSearchStub([]);
+
+            const placeholder = { key: 'nonexistent-key' };
+            const { references, elapsed } = await findPlaceholderReferences(placeholder);
+
+            expect(references).to.deep.equal([]);
+            expect(elapsed).to.be.a('number');
+        });
+
+        it('includes elapsed time in the result', async () => {
+            repo.aem.sites.cf.fragments.search = makeSearchStub([]);
+
+            const { elapsed } = await findPlaceholderReferences({ key: 'test-key' });
+            expect(elapsed).to.be.at.least(0);
+            expect(elapsed).to.be.below(PLACEHOLDER_REFERENCES_TIMEOUT_MS);
+        });
+
+        it('returns empty array when search throws a non-abort error', async () => {
+            repo.aem.sites.cf.fragments.search = sandbox.stub().rejects(new Error('500 Server Error'));
+
+            const { references } = await findPlaceholderReferences({ key: 'test-key' });
+            expect(references).to.deep.equal([]);
         });
     });
 });

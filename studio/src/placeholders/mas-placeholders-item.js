@@ -3,8 +3,13 @@ import { STATUS_PUBLISHED, TAG_STATUS_DRAFT } from '../constants.js';
 import Store from '../store.js';
 import ReactiveController from '../reactivity/reactive-controller.js';
 import { MasRepository } from '../mas-repository.js';
-import { removeFromIndexFragment, publishPlaceholder } from './mas-placeholders-repository.js';
-import { confirmation } from '../mas-confirm-dialog.js';
+import {
+    removeFromIndexFragment,
+    publishPlaceholder,
+    findPlaceholderReferences,
+    PLACEHOLDER_REFERENCES_TIMEOUT_MS,
+} from './mas-placeholders-repository.js';
+import { showPlaceholderReferencesModal } from './mas-placeholder-references-modal.js';
 import { showToast } from '../utils.js';
 import { FragmentStore } from '../reactivity/fragment-store.js';
 import { Placeholder } from '../aem/placeholder.js';
@@ -101,17 +106,38 @@ class MasPlaceholdersItem extends LitElement {
         this.toggleEditing(this.placeholder.key, event);
     }
 
+    async #checkReferences(mode) {
+        const abortController = new AbortController();
+        const timeout = setTimeout(() => abortController.abort(), PLACEHOLDER_REFERENCES_TIMEOUT_MS);
+        let result;
+        try {
+            result = await findPlaceholderReferences(this.placeholder, abortController);
+        } catch {
+            result = { references: [], elapsed: PLACEHOLDER_REFERENCES_TIMEOUT_MS };
+        } finally {
+            clearTimeout(timeout);
+        }
+        return showPlaceholderReferencesModal({
+            mode,
+            references: result.references,
+            elapsed: result.elapsed,
+            placeholderKey: this.placeholder.key,
+        });
+    }
+
     async onDelete(event) {
         this.updatePending(true);
         this.toggleDropdown(this.placeholder.key, event);
-        const confirmed = await confirmation({
-            title: 'Delete placeholder',
-            content: `Are you sure you want to delete the placeholder "${this.placeholder.key}"? This action cannot be undone.`,
-            confirmLabel: 'Delete',
-        });
-        if (!confirmed) return;
+        const proceed = await this.#checkReferences('delete');
+        if (!proceed) {
+            this.updatePending(false);
+            return;
+        }
         showToast('Deleting placeholder...');
-        if (!(await removeFromIndexFragment(this.placeholder))) return;
+        if (!(await removeFromIndexFragment(this.placeholder))) {
+            this.updatePending(false);
+            return;
+        }
         this.repository.deleteFragment(this.placeholder, {
             startToast: false,
             endToast: false,
@@ -121,6 +147,8 @@ class MasPlaceholdersItem extends LitElement {
     async onPublish(event) {
         if (this.placeholder.status === STATUS_PUBLISHED) return;
         this.toggleDropdown(this.placeholder.key, event);
+        const proceed = await this.#checkReferences('publish');
+        if (!proceed) return;
         showToast('Publishing placeholder...');
         const success = await publishPlaceholder(this.placeholder);
         if (success) {
