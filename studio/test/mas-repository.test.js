@@ -4047,4 +4047,52 @@ describe('MasRepository dictionary helpers', () => {
             expect(unsubscribeSpy.calledWith(subscribedFn)).to.be.true;
         });
     });
+
+    describe('publishFragment', () => {
+        it('should call createVersion before publish', async () => {
+            const repository = createFullRepository();
+            const callOrder = [];
+            const createVersionStub = sandbox.stub().callsFake(() => {
+                callOrder.push('createVersion');
+                return Promise.resolve();
+            });
+            const publishStub = sandbox.stub().callsFake(() => {
+                callOrder.push('publish');
+                return Promise.resolve({});
+            });
+            repository.aem = createAemMock({
+                fragments: {
+                    createVersion: createVersionStub,
+                    publish: publishStub,
+                },
+            });
+
+            const fragment = createFragment({ id: 'frag-1', etag: '"etag"' });
+            await repository.publishFragment(fragment, ['DRAFT'], false);
+
+            expect(createVersionStub.calledOnce).to.be.true;
+            expect(createVersionStub.firstCall.args[0]).to.equal('frag-1');
+            expect(createVersionStub.firstCall.args[1]).to.deep.equal({ label: 'Published' });
+            expect(publishStub.calledOnce).to.be.true;
+            expect(callOrder).to.deep.equal(['createVersion', 'publish']);
+        });
+
+        it('should still publish when createVersion fails', async () => {
+            const repository = createFullRepository();
+            const createVersionStub = sandbox.stub().rejects(new Error('Version API error'));
+            const publishStub = sandbox.stub().resolves({});
+            repository.aem = createAemMock({
+                fragments: {
+                    createVersion: createVersionStub,
+                    publish: publishStub,
+                },
+            });
+
+            const fragment = createFragment({ id: 'frag-1', etag: '"etag"' });
+            const result = await repository.publishFragment(fragment, ['DRAFT'], false);
+
+            expect(result).to.be.true;
+            expect(publishStub.calledOnce).to.be.true;
+        });
+    });
 });

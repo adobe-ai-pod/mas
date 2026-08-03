@@ -325,6 +325,45 @@ describe('VersionRepository', () => {
         });
     });
 
+    describe('resolveWorkflowAttribution', () => {
+        it('should inherit user from adjacent version within 5 seconds', () => {
+            const versions = [
+                { id: 'v1', createdBy: 'workflow-process-service', created: '2024-01-15T10:00:03Z' },
+                { id: 'v2', createdBy: 'alice@example.com', created: '2024-01-15T10:00:00Z' },
+            ];
+            const result = versionRepository.resolveWorkflowAttribution(versions);
+            expect(result[0].createdBy).to.equal('alice@example.com');
+            expect(result[1].createdBy).to.equal('alice@example.com');
+        });
+
+        it('should show System (automated) for standalone workflow-process-service version', () => {
+            const versions = [
+                { id: 'v1', createdBy: 'workflow-process-service', created: '2024-01-15T10:00:30Z' },
+                { id: 'v2', createdBy: 'alice@example.com', created: '2024-01-15T10:00:00Z' },
+            ];
+            const result = versionRepository.resolveWorkflowAttribution(versions);
+            expect(result[0].createdBy).to.equal('System (automated)');
+        });
+
+        it('should show System (automated) when no adjacent version exists', () => {
+            const versions = [
+                { id: 'v1', createdBy: 'workflow-process-service', created: '2024-01-15T10:00:00Z' },
+            ];
+            const result = versionRepository.resolveWorkflowAttribution(versions);
+            expect(result[0].createdBy).to.equal('System (automated)');
+        });
+
+        it('should not modify versions with real users', () => {
+            const versions = [
+                { id: 'v1', createdBy: 'bob@example.com', created: '2024-01-15T10:00:03Z' },
+                { id: 'v2', createdBy: 'alice@example.com', created: '2024-01-15T10:00:00Z' },
+            ];
+            const result = versionRepository.resolveWorkflowAttribution(versions);
+            expect(result[0].createdBy).to.equal('bob@example.com');
+            expect(result[1].createdBy).to.equal('alice@example.com');
+        });
+    });
+
     describe('searchVersions', () => {
         const versions = [
             { version: '1.0', createdBy: 'alice@example.com', created: '2024-01-15', comment: 'Initial version' },

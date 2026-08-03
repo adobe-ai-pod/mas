@@ -1494,6 +1494,11 @@ export class MasRepository extends LitElement {
     async publishFragment(fragment, publishReferencesWithStatus = ['DRAFT', 'UNPUBLISHED'], withToast = true) {
         try {
             this.operation.set(OPERATIONS.PUBLISH);
+            try {
+                await this.aem.sites.cf.fragments.createVersion(fragment.id, { label: 'Published' });
+            } catch (_) {
+                // version creation failure must not block publishing
+            }
             await this.aem.sites.cf.fragments.publish(fragment, publishReferencesWithStatus);
             if (withToast) {
                 const message =
@@ -1568,6 +1573,13 @@ export class MasRepository extends LitElement {
                 return false;
             }
 
+            await Promise.all(
+                fragments.map((f) =>
+                    this.aem.sites.cf.fragments
+                        .createVersion(f.id, { label: 'Published' })
+                        .catch(() => {}),
+                ),
+            );
             await this.aem.sites.cf.fragments.publishFragments(fragments, publishReferencesWithStatus);
 
             const refreshPromises = fragmentIds.map((id) => {

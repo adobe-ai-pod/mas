@@ -44,7 +44,7 @@ export class VersionRepository {
 
             // Load version history
             const versionsResponse = await this.repository.aem.sites.cf.fragments.getVersions(fragmentId);
-            const historicalVersions = versionsResponse?.items || [];
+            const historicalVersions = this.resolveWorkflowAttribution(versionsResponse?.items || []);
 
             // Combine current version with historical versions
             const versions = [currentVersion, ...historicalVersions];
@@ -132,6 +132,29 @@ export class VersionRepository {
             });
             throw error;
         }
+    }
+
+    /**
+     * Resolve workflow-process-service attributions to the real user
+     * by checking adjacent versions within a 5-second window.
+     * @param {Array} versions - sorted desc by created date
+     * @returns {Array} versions with resolved createdBy
+     */
+    resolveWorkflowAttribution(versions) {
+        const WORKFLOW_USER = 'workflow-process-service';
+        return versions.map((version, index) => {
+            if (version.createdBy !== WORKFLOW_USER) return version;
+            const adjacent = versions[index + 1];
+            if (adjacent && adjacent.createdBy !== WORKFLOW_USER) {
+                const diff = Math.abs(
+                    new Date(version.created).getTime() - new Date(adjacent.created).getTime(),
+                );
+                if (diff <= 5000) {
+                    return { ...version, createdBy: adjacent.createdBy };
+                }
+            }
+            return { ...version, createdBy: 'System (automated)' };
+        });
     }
 
     /**
