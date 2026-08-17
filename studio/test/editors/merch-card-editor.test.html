@@ -1422,6 +1422,111 @@
                             expect(fragmentStore.get().getFieldValues('locReady')).to.deep.equal([false]);
                         });
                     });
+
+                    describe('fragment title duplicate detection', () => {
+                        let originalGenerateUniqueTitle;
+
+                        beforeEach(() => {
+                            originalGenerateUniqueTitle = document.querySelector('mas-repository').aem.generateUniqueTitle;
+                        });
+
+                        afterEach(() => {
+                            document.querySelector('mas-repository').aem.generateUniqueTitle = originalGenerateUniqueTitle;
+                        });
+
+                        it('does not check uniqueness on every keystroke', async () => {
+                            const { editor } = await setupTestEnvironment({}, 'title-no-input-check');
+                            let calls = 0;
+                            document.querySelector('mas-repository').aem.generateUniqueTitle = async () => {
+                                calls++;
+                                return { title: 'x', renamed: false, resolved: true };
+                            };
+
+                            const titleField = editor.querySelector('#fragment-title');
+                            titleField.value = 'New Title';
+                            titleField.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+                            await editor.updateComplete;
+
+                            expect(calls).to.equal(0);
+                        });
+
+                        it('shows an advisory with the suggested -N title when the title collides on change', async () => {
+                            const { editor, fragmentStore } = await setupTestEnvironment({}, 'title-collision');
+                            document.querySelector('mas-repository').aem.generateUniqueTitle = async () => ({
+                                title: 'lucy-card-1',
+                                renamed: true,
+                                resolved: true,
+                            });
+
+                            const titleField = editor.querySelector('#fragment-title');
+                            titleField.value = 'lucy-card';
+                            titleField.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+                            titleField.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+                            await delay();
+                            await editor.updateComplete;
+
+                            const advisory = editor.querySelector('#fragment-title-duplicate-warning');
+                            expect(advisory).to.exist;
+                            expect(advisory.textContent).to.include('lucy-card-1');
+                            expect(fragmentStore.get().title).to.equal('lucy-card');
+                        });
+
+                        it('shows no advisory when the title is unique', async () => {
+                            const { editor } = await setupTestEnvironment({}, 'title-unique');
+                            document.querySelector('mas-repository').aem.generateUniqueTitle = async () => ({
+                                title: 'unique-title',
+                                renamed: false,
+                                resolved: true,
+                            });
+
+                            const titleField = editor.querySelector('#fragment-title');
+                            titleField.value = 'unique-title';
+                            titleField.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+                            await delay();
+                            await editor.updateComplete;
+
+                            expect(editor.querySelector('#fragment-title-duplicate-warning')).to.not.exist;
+                        });
+
+                        it('shows no advisory when the uniqueness lookup could not resolve', async () => {
+                            const { editor } = await setupTestEnvironment({}, 'title-lookup-failed');
+                            document.querySelector('mas-repository').aem.generateUniqueTitle = async () => ({
+                                title: 'lucy-card',
+                                renamed: false,
+                                resolved: false,
+                            });
+
+                            const titleField = editor.querySelector('#fragment-title');
+                            titleField.value = 'lucy-card';
+                            titleField.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+                            await delay();
+                            await editor.updateComplete;
+
+                            expect(editor.querySelector('#fragment-title-duplicate-warning')).to.not.exist;
+                        });
+
+                        it('clears any advisory when the title field is emptied', async () => {
+                            const { editor } = await setupTestEnvironment({}, 'title-emptied');
+                            document.querySelector('mas-repository').aem.generateUniqueTitle = async () => ({
+                                title: 'lucy-card-1',
+                                renamed: true,
+                                resolved: true,
+                            });
+
+                            const titleField = editor.querySelector('#fragment-title');
+                            titleField.value = 'lucy-card';
+                            titleField.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+                            await delay();
+                            await editor.updateComplete;
+                            expect(editor.querySelector('#fragment-title-duplicate-warning')).to.exist;
+
+                            titleField.value = '';
+                            titleField.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+                            await delay();
+                            await editor.updateComplete;
+                            expect(editor.querySelector('#fragment-title-duplicate-warning')).to.not.exist;
+                        });
+                    });
                 });
             });
         </script>

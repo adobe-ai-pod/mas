@@ -1,6 +1,7 @@
 import { expect } from '@esm-bundle/chai';
 import { AEM, filterByTags } from '../../src/aem/aem.js';
 import { UserFriendlyError } from '../../src/utils.js';
+import { CARD_MODEL_PATH, COLLECTION_MODEL_PATH } from '../../src/constants.js';
 
 describe('aem.js', () => {
     const aem = new AEM('test');
@@ -149,6 +150,198 @@ describe('aem.js', () => {
             expect(byName('collections').values).to.deep.equal([]);
             expect(byName('features').values).to.deep.equal(['']);
             expect(byName('title').values).to.deep.equal(['']);
+        });
+    });
+
+    describe('method: generateUniqueTitle', () => {
+        afterEach(() => {
+            delete window.fetch;
+        });
+
+        it('returns the original title unchanged when no sibling collides', async () => {
+            window.fetch = async () => ({
+                ok: true,
+                json: async () => ({ items: [{ id: 'a', title: 'Other Card' }] }),
+            });
+
+            const result = await aem.generateUniqueTitle('/content/dam/mas/sandbox/en_US', 'Lucy Card', CARD_MODEL_PATH);
+            expect(result).to.deep.equal({ title: 'Lucy Card', renamed: false, resolved: true });
+        });
+
+        it('suffixes with -1 when the title already exists', async () => {
+            window.fetch = async () => ({
+                ok: true,
+                json: async () => ({ items: [{ id: 'a', title: 'lucy-card' }] }),
+            });
+
+            const result = await aem.generateUniqueTitle('/content/dam/mas/sandbox/en_US', 'lucy-card', CARD_MODEL_PATH);
+            expect(result).to.deep.equal({ title: 'lucy-card-1', renamed: true, resolved: true });
+        });
+
+        it('chains to the next free suffix when earlier suffixes are already taken', async () => {
+            window.fetch = async () => ({
+                ok: true,
+                json: async () => ({
+                    items: [
+                        { id: 'a', title: 'lucy-card' },
+                        { id: 'b', title: 'lucy-card-1' },
+                    ],
+                }),
+            });
+
+            const result = await aem.generateUniqueTitle('/content/dam/mas/sandbox/en_US', 'lucy-card-1', CARD_MODEL_PATH);
+            expect(result).to.deep.equal({ title: 'lucy-card-2', renamed: true, resolved: true });
+        });
+
+        it('compares titles case-insensitively after trimming', async () => {
+            window.fetch = async () => ({
+                ok: true,
+                json: async () => ({ items: [{ id: 'a', title: 'lucy card' }] }),
+            });
+
+            const result = await aem.generateUniqueTitle('/content/dam/mas/sandbox/en_US', '  LUCY CARD  ', CARD_MODEL_PATH);
+            expect(result.renamed).to.be.true;
+            expect(result.resolved).to.be.true;
+        });
+
+        it('excludes the fragment being edited from the collision check', async () => {
+            window.fetch = async () => ({
+                ok: true,
+                json: async () => ({ items: [{ id: 'self-id', title: 'lucy-card' }] }),
+            });
+
+            const result = await aem.generateUniqueTitle(
+                '/content/dam/mas/sandbox/en_US',
+                'lucy-card',
+                CARD_MODEL_PATH,
+                'self-id',
+            );
+            expect(result).to.deep.equal({ title: 'lucy-card', renamed: false, resolved: true });
+        });
+
+        it('does not throw and keeps the original title when the lookup fails', async () => {
+            window.fetch = async () => ({ ok: false, status: 500, statusText: 'Server Error' });
+
+            const result = await aem.generateUniqueTitle('/content/dam/mas/sandbox/en_US', 'lucy-card', CARD_MODEL_PATH);
+            expect(result).to.deep.equal({ title: 'lucy-card', renamed: false, resolved: false });
+        });
+
+        it('stops after MAX_NAME_ATTEMPTS suffixes without throwing', async () => {
+            const takenTitles = ['lucy-card', ...Array.from({ length: 10 }, (_, i) => `lucy-card-${i + 1}`)];
+            window.fetch = async () => ({
+                ok: true,
+                json: async () => ({ items: takenTitles.map((title, i) => ({ id: `id-${i}`, title })) }),
+            });
+
+            const result = await aem.generateUniqueTitle('/content/dam/mas/sandbox/en_US', 'lucy-card', CARD_MODEL_PATH);
+            expect(result).to.deep.equal({ title: 'lucy-card', renamed: false, resolved: false });
+        });
+    });
+
+    describe('method: copyToFolder title deduplication', () => {
+        let originalGetCsrfToken;
+        let originalWait;
+
+        beforeEach(() => {
+            originalGetCsrfToken = aem.getCsrfToken;
+            originalWait = aem.wait;
+            aem.getCsrfToken = async () => 'csrf-token';
+            aem.wait = async () => {};
+        });
+
+        afterEach(() => {
+            aem.getCsrfToken = originalGetCsrfToken;
+            aem.wait = originalWait;
+            delete window.fetch;
+        });
+
+        function mockFetch({ existingTitle, searchOk = true, sourceModelId = CARD_MODEL_PATH }) {
+            return async (url, options = {}) => {
+                if (url.endsWith('.json')) {
+                    return { ok: true, json: async () => ({}) };
+                }
+                if (url.includes('/search?')) {
+                    if (!searchOk) return { ok: false, status: 500, statusText: 'Server Error' };
+                    return {
+                        ok: true,
+                        json: async () => ({ items: existingTitle ? [{ id: 'existing-id', title: existingTitle }] : [] }),
+                    };
+                }
+                if (url.startsWith(aem.cfFragmentsUrl) && url.includes('?path=')) {
+                    return { ok: true, json: async () => ({ items: [] }) };
+                }
+                if (url.includes('/cf/fragments/source-id?')) {
+                    return {
+                        ok: true,
+                        headers: { get: () => 'etag-src' },
+                        json: async () => ({
+                            id: 'source-id',
+                            title: 'Lucy Card',
+                            description: '',
+                            model: { id: sourceModelId },
+                            fields: [],
+                            tags: [],
+                        }),
+                    };
+                }
+                if (url.includes('/cf/fragments/new-id?')) {
+                    return {
+                        ok: true,
+                        headers: { get: () => 'etag-new' },
+                        json: async () => ({
+                            id: 'new-id',
+                            title: 'Lucy Card',
+                            model: { id: sourceModelId },
+                            fields: [],
+                            tags: [],
+                        }),
+                    };
+                }
+                if (options.method === 'POST' && url === aem.cfFragmentsUrl) {
+                    mockFetch.capturedBody = JSON.parse(options.body);
+                    return { ok: true, json: async () => ({ id: 'new-id' }) };
+                }
+                throw new Error(`Unexpected fetch: ${url}`);
+            };
+        }
+
+        it('renames the copied card title to the next free -N when it collides in the target path', async () => {
+            window.fetch = mockFetch({ existingTitle: 'Lucy Card' });
+
+            const finalFragment = await aem.copyToFolder(
+                { id: 'source-id', path: '/content/dam/mas/sandbox/en_US/lucy-card' },
+                '/content/dam/mas/nala',
+            );
+
+            expect(mockFetch.capturedBody.title).to.equal('Lucy Card-1');
+            expect(finalFragment.titleRenamedTo).to.equal('Lucy Card-1');
+            expect(finalFragment.renamedTo).to.be.undefined;
+        });
+
+        it('keeps the source title verbatim and does not throw when the uniqueness lookup fails', async () => {
+            window.fetch = mockFetch({ searchOk: false });
+
+            const finalFragment = await aem.copyToFolder(
+                { id: 'source-id', path: '/content/dam/mas/sandbox/en_US/lucy-card' },
+                '/content/dam/mas/nala',
+            );
+
+            expect(mockFetch.capturedBody.title).to.equal('Lucy Card');
+            expect(finalFragment.titleRenamedTo).to.be.undefined;
+        });
+
+        it('does not run the title uniqueness check for non-card models', async () => {
+            // A colliding title exists in the search results, but since the source fragment
+            // is a collection, copyToFolder must skip the check and keep the title as-is.
+            window.fetch = mockFetch({ existingTitle: 'Lucy Card', sourceModelId: COLLECTION_MODEL_PATH });
+
+            const finalFragment = await aem.copyToFolder(
+                { id: 'source-id', path: '/content/dam/mas/sandbox/en_US/lucy-card' },
+                '/content/dam/mas/nala',
+            );
+
+            expect(mockFetch.capturedBody.title).to.equal('Lucy Card');
+            expect(finalFragment.titleRenamedTo).to.be.undefined;
         });
     });
 

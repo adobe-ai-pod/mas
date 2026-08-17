@@ -1,5 +1,5 @@
 import { UserFriendlyError } from '../utils.js';
-import { COLLECTION_MODEL_PATH } from '../constants.js';
+import { CARD_MODEL_PATH, COLLECTION_MODEL_PATH } from '../constants.js';
 
 const NETWORK_ERROR_MESSAGE = 'Network error';
 const MAX_POLL_ATTEMPTS = 10;
@@ -700,18 +700,66 @@ class AEM {
     }
 
     /**
+     * Generates a unique fragment title within a folder by appending a number suffix if the title already exists.
+     * Never throws: if the uniqueness check fails, the original title is returned with `resolved: false`
+     * so callers are never blocked from saving or cloning.
+     * @param {string} path - The folder path to scope the uniqueness check to
+     * @param {string} title - The desired title
+     * @param {string} [modelId] - Restrict the check to fragments using this model
+     * @param {string} [excludeId] - Fragment id to exclude from the check (e.g. the fragment being edited)
+     * @returns {Promise<{title: string, renamed: boolean, resolved: boolean}>} The final title, whether it changed, and whether the check completed
+     */
+    async generateUniqueTitle(path, title, modelId, excludeId) {
+        const trimmedTitle = (title ?? '').trim();
+        if (!trimmedTitle) return { title: trimmedTitle, renamed: false, resolved: true };
+
+        const normalize = (value) => (value ?? '').normalize('NFC').trim().toLowerCase();
+
+        let existingTitles;
+        try {
+            existingTitles = new Set();
+            for await (const items of this.searchFragment({ path, modelIds: modelId ? [modelId] : [] })) {
+                for (const item of items) {
+                    if (excludeId && item.id === excludeId) continue;
+                    existingTitles.add(normalize(item.title));
+                }
+            }
+        } catch {
+            return { title: trimmedTitle, renamed: false, resolved: false };
+        }
+
+        if (!existingTitles.has(normalize(trimmedTitle))) {
+            return { title: trimmedTitle, renamed: false, resolved: true };
+        }
+
+        const suffixMatch = trimmedTitle.match(/^(.*)-(\d+)$/);
+        const base = suffixMatch ? suffixMatch[1] : trimmedTitle;
+        const startIndex = suffixMatch ? parseInt(suffixMatch[2], 10) : 0;
+
+        for (let attempt = 1; attempt <= MAX_NAME_ATTEMPTS; attempt++) {
+            const candidate = `${base}-${startIndex + attempt}`;
+            if (!existingTitles.has(normalize(candidate))) {
+                return { title: candidate, renamed: true, resolved: true };
+            }
+        }
+
+        return { title: trimmedTitle, renamed: false, resolved: false };
+    }
+
+    /**
      * Creates a copy of a fragment in the specified location
      * @param {Object} fullFragment - The complete fragment data to copy
      * @param {string} targetPath - The destination path for the copy
      * @param {string} name - The name for the copied fragment
      * @param {string} csrfToken - CSRF token for authentication
+     * @param {string} [title] - The title for the copied fragment (defaults to the source fragment's title)
      * @returns {Promise<Object>} The newly created fragment
      */
-    async createFragmentCopy(fullFragment, targetPath, name, csrfToken) {
+    async createFragmentCopy(fullFragment, targetPath, name, csrfToken, title = fullFragment.title) {
         const fieldsWithoutVariations = fullFragment.fields.filter((field) => field.name !== 'variations');
 
         const copyData = {
-            title: fullFragment.title,
+            title,
             description: fullFragment.description,
             modelId: fullFragment.model.id,
             parentPath: targetPath,
@@ -788,7 +836,26 @@ class AEM {
             const fullFragment = await this.sites.cf.fragments.getById(fragment.id);
             const { name: finalName, renamed } = await this.generateUniqueName(finalTargetPath, assetName);
 
-            const copiedFragment = await this.createFragmentCopy(fullFragment, finalTargetPath, finalName, csrfToken);
+            let finalTitle = fullFragment.title;
+            let titleRenamed = false;
+            if (fullFragment.model?.id === CARD_MODEL_PATH) {
+                const titleResult = await this.generateUniqueTitle(
+                    finalTargetPath,
+                    fullFragment.title,
+                    CARD_MODEL_PATH,
+                    fullFragment.id,
+                );
+                finalTitle = titleResult.title;
+                titleRenamed = titleResult.renamed;
+            }
+
+            const copiedFragment = await this.createFragmentCopy(
+                fullFragment,
+                finalTargetPath,
+                finalName,
+                csrfToken,
+                finalTitle,
+            );
 
             await this.wait(COPY_WAIT_TIME);
             await this.copyFragmentTags(copiedFragment, fullFragment.tags);
@@ -797,6 +864,9 @@ class AEM {
 
             if (renamed) {
                 finalFragment.renamedTo = finalName;
+            }
+            if (titleRenamed) {
+                finalFragment.titleRenamedTo = finalTitle;
             }
 
             return finalFragment;
@@ -1455,6 +1525,10 @@ class AEM {
                  * @see AEM#copyToFolder
                  */
                 copyToFolder: this.copyToFolder.bind(this),
+                /**
+                 * @see AEM#generateUniqueTitle
+                 */
+                generateUniqueTitle: this.generateUniqueTitle.bind(this),
                 /**
                  * @see AEM#ensureFolderExists
                  */

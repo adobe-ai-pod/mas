@@ -91,6 +91,7 @@ class MerchCardEditor extends LitElement {
         disabledPromoGeoOptions: { type: Array, attribute: false },
         fieldsReady: { type: Boolean, state: true },
         previewLocaleOverride: { type: String, state: true },
+        duplicateTitleSuggestion: { type: String, state: true },
     };
 
     static SECTION_FIELDS = {
@@ -127,6 +128,7 @@ class MerchCardEditor extends LitElement {
         this.fieldsReady = false;
         this.previewLocaleOverride = null;
         this.localeSearch = '';
+        this.duplicateTitleSuggestion = null;
         this.reactiveController = new ReactiveController(this, []);
         this.renderQuantitySelectSettingOverrideIndicator = this.renderQuantitySelectSettingOverrideIndicator.bind(this);
         this.resetQuantitySettingToDefault = this.resetQuantitySettingToDefault.bind(this);
@@ -135,6 +137,11 @@ class MerchCardEditor extends LitElement {
 
     createRenderRoot() {
         return this;
+    }
+
+    /** @returns {import('../mas-repository.js').MasRepository | null} */
+    get repository() {
+        return document.querySelector('mas-repository');
     }
 
     get effectiveIsVariation() {
@@ -698,6 +705,7 @@ class MerchCardEditor extends LitElement {
         }
         if (changedProperties.has('fragmentStore') && this.fragmentStore) {
             this.fieldsReady = false;
+            this.duplicateTitleSuggestion = null;
             this.reactiveController.updateStores([this.fragmentStore, Store.settings.rows, Store.search]);
             this.#updateCurrentVariantMapping();
             this.#updateAvailableSizes();
@@ -1267,7 +1275,13 @@ class MerchCardEditor extends LitElement {
                             id="fragment-title"
                             value="${this.fragment.title}"
                             @input="${this.#handleFragmentTitleUpdate}"
+                            @change="${this.#handleFragmentTitleCheck}"
                         ></sp-textfield>
+                        ${this.duplicateTitleSuggestion
+                            ? html`<sp-help-text id="fragment-title-duplicate-warning">
+                                  This title already exists in this path. Consider “${this.duplicateTitleSuggestion}” instead.
+                              </sp-help-text>`
+                            : nothing}
                     </sp-field-group>
                     <sp-field-group id="fragment-description-group">
                         <sp-field-label for="fragment-description">Fragment description</sp-field-label>
@@ -1723,6 +1737,26 @@ class MerchCardEditor extends LitElement {
 
     #handleFragmentTitleUpdate(e) {
         this.fragmentStore.updateFieldInternal('title', e.target.value);
+    }
+
+    async #handleFragmentTitleCheck(e) {
+        const title = e.target.value?.trim() || '';
+        const fragmentPath = this.fragment?.path;
+        const aem = this.repository?.aem;
+
+        if (!title || !fragmentPath || !aem) {
+            this.duplicateTitleSuggestion = null;
+            return;
+        }
+
+        const path = fragmentPath.split('/').slice(0, -1).join('/');
+        const {
+            title: suggestedTitle,
+            renamed,
+            resolved,
+        } = await aem.generateUniqueTitle(path, title, CARD_MODEL_PATH, this.fragment.id);
+
+        this.duplicateTitleSuggestion = resolved && renamed ? suggestedTitle : null;
     }
 
     #handleFragmentDescriptionUpdate(e) {
