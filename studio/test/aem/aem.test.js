@@ -152,6 +152,73 @@ describe('aem.js', () => {
         });
     });
 
+    describe('publish attribution', () => {
+        afterEach(() => {
+            delete window.adobeIMS;
+            delete window.fetch;
+        });
+
+        it('publishFragment sends publishedBy from the acting IMS user and keeps the workflow model', async () => {
+            window.adobeIMS = { getProfile: async () => ({ email: 'user@example.com' }) };
+            let capturedOptions;
+            window.fetch = async (url, options) => {
+                capturedOptions = options;
+                return { ok: true, json: async () => ({}) };
+            };
+
+            await aem.publishFragment({ path: '/content/dam/mas/card', etag: '"etag-1"' });
+
+            const body = JSON.parse(capturedOptions.body);
+            expect(body.publishedBy).to.equal('user@example.com');
+            expect(body.workflowModelId).to.equal('/var/workflow/models/scheduled_activation_with_references');
+            expect(capturedOptions.headers['If-Match']).to.equal('"etag-1"');
+        });
+
+        it('publishFragment defaults publishedBy to an empty string when no IMS profile is available', async () => {
+            window.fetch = async (url, options) => {
+                return { ok: true, json: async () => JSON.parse(options.body) };
+            };
+
+            const body = await aem.publishFragment({ path: '/content/dam/mas/card', etag: '"etag-1"' });
+
+            expect(body.publishedBy).to.equal('');
+        });
+
+        it('unpublishFragment sends publishedBy from the acting IMS user and keeps the workflow model', async () => {
+            window.adobeIMS = { getProfile: async () => ({ email: 'user@example.com' }) };
+            let capturedOptions;
+            window.fetch = async (url, options) => {
+                capturedOptions = options;
+                return { ok: true, json: async () => ({}) };
+            };
+
+            await aem.unpublishFragment({ path: '/content/dam/mas/card', etag: '"etag-1"' });
+
+            const body = JSON.parse(capturedOptions.body);
+            expect(body.publishedBy).to.equal('user@example.com');
+            expect(body.workflowModelId).to.equal('/var/workflow/models/scheduled_deactivation');
+        });
+
+        it('publishFragments sends publishedBy from the acting IMS user and keeps the workflow model', async () => {
+            window.adobeIMS = { getProfile: async () => ({ email: 'user@example.com' }) };
+            let capturedOptions;
+            window.fetch = async (url, options) => {
+                capturedOptions = options;
+                return { ok: true, json: async () => ({}) };
+            };
+
+            await aem.publishFragments([
+                { path: '/content/dam/mas/card-1', etag: '"etag-1"' },
+                { path: '/content/dam/mas/card-2', etag: '"etag-2"' },
+            ]);
+
+            const body = JSON.parse(capturedOptions.body);
+            expect(body.publishedBy).to.equal('user@example.com');
+            expect(body.workflowModelId).to.equal('/var/workflow/models/scheduled_activation_with_references');
+            expect(capturedOptions.headers['If-Match']).to.equal('"etag-1"');
+        });
+    });
+
     describe('method: postFormWithCsrf', () => {
         let originalGetCsrfToken;
 

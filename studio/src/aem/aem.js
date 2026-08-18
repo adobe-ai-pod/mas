@@ -72,6 +72,16 @@ class AEM {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
+    /**
+     * Get the acting user's IMS email, following the same convention used for bulk-publish attribution.
+     * @see bulk-publish-store.js#startPublishing
+     * @returns {Promise<string>} the acting user's email, or '' when no IMS profile is available
+     */
+    async getPublishedBy() {
+        const profile = await window.adobeIMS?.getProfile?.().catch(() => null);
+        return profile?.email ?? '';
+    }
+
     async getCsrfToken() {
         const response = await fetch(this.csrfTokenUrl, {
             headers: this.headers,
@@ -467,6 +477,7 @@ class AEM {
      * @returns {Promise<void>}
      */
     async publishFragment(fragment, publishReferencesWithStatus = ['DRAFT', 'UNPUBLISHED']) {
+        const publishedBy = await this.getPublishedBy();
         const response = await fetch(this.cfPublishUrl, {
             method: 'POST',
             headers: {
@@ -478,6 +489,7 @@ class AEM {
                 paths: [fragment.path],
                 filterReferencesByStatus: publishReferencesWithStatus,
                 workflowModelId: '/var/workflow/models/scheduled_activation_with_references',
+                publishedBy,
             }),
         }).catch((err) => {
             throw new Error(`${NETWORK_ERROR_MESSAGE}: ${err.message}`);
@@ -494,6 +506,7 @@ class AEM {
      * @returns {Promise<void>}
      */
     async unpublishFragment(fragment) {
+        const publishedBy = await this.getPublishedBy();
         const response = await fetch(this.cfPublishUrl, {
             method: 'POST',
             headers: {
@@ -504,6 +517,7 @@ class AEM {
             body: JSON.stringify({
                 paths: [fragment.path],
                 workflowModelId: '/var/workflow/models/scheduled_deactivation',
+                publishedBy,
             }),
         }).catch((err) => {
             throw new Error(`${NETWORK_ERROR_MESSAGE}: ${err.message}`);
@@ -528,6 +542,7 @@ class AEM {
         // Use the first fragment's etag for the If-Match header
         const etag = fragments[0].etag;
         const paths = fragments.map((fragment) => fragment.path);
+        const publishedBy = await this.getPublishedBy();
 
         const response = await fetch(this.cfPublishUrl, {
             method: 'POST',
@@ -540,6 +555,7 @@ class AEM {
                 paths,
                 filterReferencesByStatus: publishReferencesWithStatus,
                 workflowModelId: '/var/workflow/models/scheduled_activation_with_references',
+                publishedBy,
             }),
         }).catch((err) => {
             throw new Error(`${NETWORK_ERROR_MESSAGE}: ${err.message}`);

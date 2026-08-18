@@ -83,6 +83,97 @@ describe('VersionRepository', () => {
             expect(result.currentVersion.created).to.be.a('string');
             expect(result.currentVersion.createdBy).to.equal('System');
         });
+
+        it('should not attribute the current version to the workflow service account', async () => {
+            const fragment = {
+                id: 'fragment-1',
+                modified: '2024-01-15T10:00:00Z',
+                modifiedBy: 'workflow-process-service',
+            };
+
+            mockRepository.aem.sites.cf.fragments.getById.resolves(fragment);
+            mockRepository.aem.sites.cf.fragments.getVersions.resolves({ items: [] });
+
+            const result = await versionRepository.loadVersionHistory('fragment-1');
+
+            expect(result.currentVersion.createdBy).to.equal('System');
+        });
+
+        it('should fall back to the fragment modifier when only a system identity is available', async () => {
+            const fragment = {
+                id: 'fragment-1',
+                modified: { at: '2024-01-15T10:00:00Z', by: 'user@example.com' },
+                modifiedBy: 'workflow-process-service',
+            };
+
+            mockRepository.aem.sites.cf.fragments.getById.resolves(fragment);
+            mockRepository.aem.sites.cf.fragments.getVersions.resolves({ items: [] });
+
+            const result = await versionRepository.loadVersionHistory('fragment-1');
+
+            expect(result.currentVersion.createdBy).to.equal('user@example.com');
+        });
+
+        it('should normalize a historical version item whose author is the workflow service account', async () => {
+            const fragment = {
+                id: 'fragment-1',
+                modified: '2024-01-15T10:00:00Z',
+                modifiedBy: 'user@example.com',
+            };
+            const versionsResponse = {
+                items: [{ id: 'v1', version: '1.0', created: '2024-01-14T10:00:00Z', createdBy: 'workflow-process-service' }],
+            };
+
+            mockRepository.aem.sites.cf.fragments.getById.resolves(fragment);
+            mockRepository.aem.sites.cf.fragments.getVersions.resolves(versionsResponse);
+
+            const result = await versionRepository.loadVersionHistory('fragment-1');
+
+            expect(result.versions[1].createdBy).to.equal('user@example.com');
+            expect(result.versions[1].id).to.equal('v1');
+        });
+
+        it('should fall back to System for a historical version item when no real user is recoverable', async () => {
+            const fragment = { id: 'fragment-1', modified: '2024-01-15T10:00:00Z' };
+            const versionsResponse = {
+                items: [{ id: 'v1', version: '1.0', created: '2024-01-14T10:00:00Z', createdBy: 'workflow-process-service' }],
+            };
+
+            mockRepository.aem.sites.cf.fragments.getById.resolves(fragment);
+            mockRepository.aem.sites.cf.fragments.getVersions.resolves(versionsResponse);
+
+            const result = await versionRepository.loadVersionHistory('fragment-1');
+
+            expect(result.versions[1].createdBy).to.equal('System');
+        });
+
+        it('should preserve historical version item properties other than the author', async () => {
+            const fragment = { id: 'fragment-1', modified: '2024-01-15T10:00:00Z' };
+            const versionsResponse = {
+                items: [
+                    {
+                        id: 'v1',
+                        version: '1.0',
+                        created: '2024-01-14T10:00:00Z',
+                        createdBy: 'alice@example.com',
+                        comment: 'Initial version',
+                    },
+                ],
+            };
+
+            mockRepository.aem.sites.cf.fragments.getById.resolves(fragment);
+            mockRepository.aem.sites.cf.fragments.getVersions.resolves(versionsResponse);
+
+            const result = await versionRepository.loadVersionHistory('fragment-1');
+
+            expect(result.versions[1]).to.deep.equal({
+                id: 'v1',
+                version: '1.0',
+                created: '2024-01-14T10:00:00Z',
+                createdBy: 'alice@example.com',
+                comment: 'Initial version',
+            });
+        });
     });
 
     describe('loadVersionData', () => {

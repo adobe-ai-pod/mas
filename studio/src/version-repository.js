@@ -1,5 +1,23 @@
 import Events from './events.js';
 
+// Service accounts that can appear as the recorded author of a publish/modify action
+// (e.g. AEM's activation workflow) instead of the user who actually triggered it.
+const SYSTEM_IDENTITIES = new Set(['workflow-process-service']);
+
+/**
+ * Resolve the first candidate that is a real (non-system) identity.
+ * @param {...string} candidates - Identity candidates in priority order
+ * @returns {string} The first real identity found, or 'System' if none is available
+ */
+function resolveVersionAuthor(...candidates) {
+    for (const candidate of candidates) {
+        if (candidate && !SYSTEM_IDENTITIES.has(candidate)) {
+            return candidate;
+        }
+    }
+    return 'System';
+}
+
 /**
  * Repository for version-related data operations.
  * Handles loading, saving, and restoring fragment versions.
@@ -38,13 +56,16 @@ export class VersionRepository {
                 id: 'current',
                 version: 'Current',
                 created: modifiedDate,
-                createdBy: fragment.modifiedBy || fragment.modified?.by || 'System',
+                createdBy: resolveVersionAuthor(fragment.modifiedBy, fragment.modified?.by),
                 isCurrent: true,
             };
 
             // Load version history
             const versionsResponse = await this.repository.aem.sites.cf.fragments.getVersions(fragmentId);
-            const historicalVersions = versionsResponse?.items || [];
+            const historicalVersions = (versionsResponse?.items || []).map((item) => ({
+                ...item,
+                createdBy: resolveVersionAuthor(item.createdBy, fragment.modifiedBy, fragment.modified?.by),
+            }));
 
             // Combine current version with historical versions
             const versions = [currentVersion, ...historicalVersions];
