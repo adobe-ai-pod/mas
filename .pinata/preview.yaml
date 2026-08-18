@@ -220,8 +220,10 @@ surfaces:
           M@S Studio authoring app on the content grid of the sandbox folder,
           real stage cards. Double-clicking a card opens the merch card
           editor and its fields: tag pickers, prices, OST links, variant
-          controls. Pick for any studio/ change — editors, fields, dialogs,
-          pickers, Studio chrome.
+          controls. The fallback for studio/ changes — editors, fields,
+          dialogs, pickers, Studio chrome — that no dedicated Studio surface
+          below (placeholders, translations, version history) covers; prefer
+          the dedicated one when the change is about that page.
       match: 'studio/*'
       requires:
           - /studio/libs/swc.js
@@ -253,6 +255,35 @@ surfaces:
       requires:
           - /studio/libs/swc.js
           - /web-components/dist/mas.js
+
+    # The version-history panel is not deep-linkable without a fragment id, so
+    # the surface opens it the way an author does: double-click the first
+    # sandbox card (opens the merch card editor), then the editor side nav's
+    # History item (once the fragment has loaded and the item is enabled).
+    # Studio components render into light DOM, so the dblclick can be
+    # dispatched at the card element (2026-08-18: MWPW-202902 escalated on
+    # "no version history panel visible").
+    - id: studio-version-history
+      url: https://mas.adobe.com/studio.html?aem.env=stage#page=content&path=sandbox
+      description: >-
+          M@S Studio version-history panel of the first sandbox card: the list
+          of versions (date/time, "By <author>" line, label/comment, row menu)
+          next to the version preview. Pick for changes to version history,
+          version attribution or the version repository (studio/src/version*,
+          studio/src/aem/*).
+      match: 'studio/src/version*'
+      requires:
+          - /studio/libs/swc.js
+          - /web-components/dist/mas.js
+      interact:
+          - wait_for: 'mas-fragment-render.mas-fragment'
+          - dispatch_event: dblclick
+            at: 'mas-fragment-render.mas-fragment'
+          - wait_for: 'mas-side-nav-item[label="History"]:not([disabled])'
+          - click: 'mas-side-nav-item[label="History"]:not([disabled])'
+          - wait_for: 'version-page .version-item .version-author-name'
+          # the list renders entry by entry as the repository answers
+          - wait_ms: 1500
 
     # Mined from adobecom/mas merged PR test urls (full history, 745 PRs
     # 2024-06 to 2026-07; each probed HTTP 200, public, never a /drafts/ page).
