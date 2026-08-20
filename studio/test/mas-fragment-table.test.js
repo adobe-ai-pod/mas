@@ -395,4 +395,20 @@ describe('MasFragmentTable', () => {
             expect(Store.selection.get()).to.deep.equal(['grouped-1']);
         });
     });
+
+    describe('mnemonic icon accessibility', () => {
+        it('renders img.mnemonic-icon with an empty alt attribute', async () => {
+            const iconUrl = 'https://www.adobe.com/icons/test.svg';
+            const fragmentStore = createFragmentStore({
+                getFieldValue: sandbox.stub().callsFake((field) => (field === 'mnemonicIcon' ? iconUrl : '')),
+            });
+            const el = await fixture(html`<mas-fragment-table .fragmentStore=${fragmentStore}></mas-fragment-table>`);
+            await el.updateComplete;
+
+            const img = el.querySelector('img.mnemonic-icon');
+            expect(img).to.exist;
+            expect(img.getAttribute('alt')).to.equal('');
+            expect(img.getAttribute('src')).to.equal(iconUrl);
+        });
+    });
 });
