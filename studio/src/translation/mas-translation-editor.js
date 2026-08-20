@@ -522,6 +522,7 @@ class MasTranslationEditor extends LitElement {
                 searchAndFilters.marketSegmentFilter = [];
                 searchAndFilters.customerSegmentFilter = [];
                 searchAndFilters.productFilter = [];
+                searchAndFilters.createdByUserFilter = [];
             }
         }
         if (this.repository?.searchFragments) this.repository.searchFragments();
@@ -578,6 +579,7 @@ class MasTranslationEditor extends LitElement {
                     .variationTabs=${[VARIATION_TAB_NAME.PROMOTION, VARIATION_TAB_NAME.GROUPED]}
                     .hidePromoVariations=${true}
                     .restrictImportSurface=${Store.surface()}
+                    .createdByFilter=${true}
                 ></mas-items-selector>
             </sp-dialog-wrapper>
         `;

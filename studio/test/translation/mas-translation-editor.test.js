@@ -151,6 +151,12 @@ describe('MasTranslationEditor', () => {
             expect(itemsSelector.restrictImportSurface).to.equal(SURFACES.NALA.name);
         });
 
+        it('opts the Select files items selector into the Created by filter (MWPW-188419)', async () => {
+            const el = await fixture(html`<mas-translation-editor></mas-translation-editor>`);
+            const itemsSelector = el.shadowRoot.querySelector('mas-items-selector');
+            expect(itemsSelector.createdByFilter).to.be.true;
+        });
+
         it('should initialize with prefill data if present', async () => {
             Store.translationProjects.translationProjectId.set(null);
             Store.translationProjects.prefill.set({

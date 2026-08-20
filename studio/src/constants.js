@@ -284,6 +284,7 @@ export const FILTER_TYPE = {
     PZN: 'pzn',
     TAG: 'tag',
     STATUS: 'status',
+    CREATED_BY: 'createdBy',
 };
 
 export const FRAGMENT_STATUS = {

@@ -77,6 +77,9 @@ class MasSearchAndFilters extends LitElement {
         lockedTemplateFilter: { type: String, attribute: 'locked-template-filter' },
         /** When set, preselects this template variant initially while still allowing it to be changed. */
         defaultTemplateFilter: { type: String, attribute: 'default-template-filter' },
+        /** Opt-in: renders the "Created by" filter chip, scoped to this host (never the global toolbar). */
+        createdByFilter: { type: Boolean, reflect: true, attribute: 'created-by-filter' },
+        createdByUserFilter: { type: Array, state: true },
         promotionSurfaceOptions: { type: Array },
         promotionSurface: { type: String },
         offerFilterOptions: { type: Array },
@@ -107,6 +110,8 @@ class MasSearchAndFilters extends LitElement {
         this.dataSubscription = null;
         this.lockedTemplateFilter = '';
         this.defaultTemplateFilter = '';
+        this.createdByFilter = false;
+        this.createdByUserFilter = [];
         this.promotionSurfaceOptions = [];
         this.promotionSurface = '';
         this.offerFilterOptions = [];
@@ -278,6 +283,7 @@ class MasSearchAndFilters extends LitElement {
             selectionStore[`display${this.typeUppercased}`],
             Store[this.type === TABLE_TYPE.PLACEHOLDERS ? 'placeholders' : 'fragments'].list.loading,
             ...(this.type !== TABLE_TYPE.PLACEHOLDERS ? [Store.fragments.list.firstPageLoaded] : []),
+            ...(this.createdByFilter ? [Store.users, Store.profile] : []),
         ]);
         const dataCallback = () => {
             if (!this.searchOnly) {
@@ -328,6 +334,23 @@ class MasSearchAndFilters extends LitElement {
         return Store.fragments.list.firstPageLoaded.get() === true && Store.fragments.list.loading.get();
     }
 
+    /**
+     * Author list for the "Created by" popover, scoped to this host. Mirrors the sort
+     * order of mas-user-picker's filteredUsers (fields/user-picker.js): signed-in author first,
+     * then alphabetical by display name.
+     */
+    get createdByUserOptions() {
+        if (!this.createdByFilter) return [];
+        const currentEmail = Store.profile.get()?.email;
+        return [...(Store.users.get() || [])]
+            .sort((a, b) => {
+                if (a.userPrincipalName === currentEmail) return -1;
+                if (b.userPrincipalName === currentEmail) return 1;
+                return a.displayName.localeCompare(b.displayName);
+            })
+            .map((user) => ({ id: user.userPrincipalName, title: user.displayName }));
+    }
+
     get appliedFilters() {
         const filters = [];
         const templateMap = new Map(this.templateOptions.map((opt) => [opt.id || opt.value, opt]));
@@ -339,6 +362,7 @@ class MasSearchAndFilters extends LitElement {
         const pznMap = new Map(this.pznOptions.map((opt) => [opt.id || opt.value, opt]));
         const tagMap = new Map(this.tagOptions.map((opt) => [opt.id || opt.value, opt]));
         const statusMap = new Map(this.statusOptions.map((opt) => [opt.id || opt.value, opt]));
+        const createdByMap = new Map(this.createdByUserOptions.map((opt) => [opt.id, opt]));
 
         for (const id of this.templateFilter) {
             const option = templateMap.get(id);
@@ -375,6 +399,10 @@ class MasSearchAndFilters extends LitElement {
         for (const id of this.statusFilter) {
             const option = statusMap.get(id);
             if (option) filters.push({ type: FILTER_TYPE.STATUS, id, label: option.title || option.label });
+        }
+        for (const id of this.createdByUserFilter) {
+            const option = createdByMap.get(id);
+            if (option) filters.push({ type: FILTER_TYPE.CREATED_BY, id, label: option.title || option.label });
         }
         return filters;
     }
@@ -508,7 +536,8 @@ class MasSearchAndFilters extends LitElement {
             changed.has('planTypeFilter') ||
             changed.has('pznFilter') ||
             changed.has('tagFilter') ||
-            changed.has('statusFilter')
+            changed.has('statusFilter') ||
+            changed.has('createdByUserFilter')
         ) {
             if (
                 changed.has('searchQuery') ||
@@ -556,6 +585,9 @@ class MasSearchAndFilters extends LitElement {
             case FILTER_TYPE.STATUS:
                 currentValues = [...this.statusFilter];
                 break;
+            case FILTER_TYPE.CREATED_BY:
+                currentValues = [...this.createdByUserFilter];
+                break;
             default:
                 currentValues = [];
         }
@@ -595,6 +627,9 @@ class MasSearchAndFilters extends LitElement {
                 break;
             case FILTER_TYPE.STATUS:
                 this.statusFilter = currentValues;
+                break;
+            case FILTER_TYPE.CREATED_BY:
+                this.createdByUserFilter = currentValues;
                 break;
         }
     }
@@ -665,6 +700,9 @@ class MasSearchAndFilters extends LitElement {
             case FILTER_TYPE.STATUS:
                 this.statusFilter = this.statusFilter.filter((filterId) => filterId !== id);
                 break;
+            case FILTER_TYPE.CREATED_BY:
+                this.createdByUserFilter = this.createdByUserFilter.filter((filterId) => filterId !== id);
+                break;
         }
     }
 
@@ -682,6 +720,7 @@ class MasSearchAndFilters extends LitElement {
         this.pznFilter = [];
         this.tagFilter = [];
         this.statusFilter = [];
+        this.createdByUserFilter = [];
     }
 
     resetFilters() {
@@ -831,6 +870,13 @@ class MasSearchAndFilters extends LitElement {
         return fragment.tags?.some((tag) => selectedIds.some((sel) => tag.id === sel || tag.id?.startsWith(`${sel}/`)));
     }
 
+    /** Mirrors mas-repository.js's #applyInMemoryFilter createdBy semantics: lowercased union match, missing created.by excluded. */
+    #fragmentMatchesCreatedBy(fragment, selectedUserPrincipalNames) {
+        const itemCreatedBy = (fragment.created?.by || '').toLowerCase();
+        if (!itemCreatedBy) return false;
+        return selectedUserPrincipalNames.some((upn) => upn.toLowerCase() === itemCreatedBy);
+    }
+
     #applyFilters() {
         const source = getItemsSelectionStore()[`all${this.typeUppercased}`].value || [];
         const query = this.searchQuery?.toLowerCase();
@@ -843,6 +889,7 @@ class MasSearchAndFilters extends LitElement {
         const hasPzn = this.pznFilter?.length > 0;
         const hasTag = this.tagFilter?.length > 0;
         const hasStatus = this.statusFilter?.length > 0;
+        const hasCreatedBy = this.createdByUserFilter?.length > 0;
 
         const result = source.filter((fragment) => {
             if (query) {
@@ -898,6 +945,9 @@ class MasSearchAndFilters extends LitElement {
             if (hasTag) {
                 if (!this.#fragmentMatchesAnyTag(fragment, this.tagFilter)) return false;
             }
+            if (hasCreatedBy) {
+                if (!this.#fragmentMatchesCreatedBy(fragment, this.createdByUserFilter)) return false;
+            }
             return true;
         });
 
@@ -946,6 +996,14 @@ class MasSearchAndFilters extends LitElement {
                 ${this.#renderFilterPicker('Status', this.statusOptions, this.statusFilter, FILTER_TYPE.STATUS)}
                 ${this.#renderTagPicker('Personalization', 'pzn', this.pznFilter, FILTER_TYPE.PZN)} ${this.#renderOfferPicker()}
                 ${surfacePicker}
+                ${this.createdByFilter
+                    ? this.#renderFilterPicker(
+                          'Created by',
+                          this.createdByUserOptions,
+                          this.createdByUserFilter,
+                          FILTER_TYPE.CREATED_BY,
+                      )
+                    : nothing}
             </div>
             ${this.#renderAppliedFilters()}
         `;

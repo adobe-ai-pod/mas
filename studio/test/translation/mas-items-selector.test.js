@@ -414,6 +414,26 @@ describe('MasItemsSelector', () => {
             expect(types).to.include(TABLE_TYPE.COLLECTIONS);
             expect(types).to.include(TABLE_TYPE.PLACEHOLDERS);
         });
+
+        describe('createdByFilter forwarding (MWPW-188419)', () => {
+            it('defaults to false and forwards false to every tab', async () => {
+                const el = await fixture(html`<mas-items-selector></mas-items-selector>`);
+                expect(el.createdByFilter).to.be.false;
+                const searchFilters = el.shadowRoot.querySelectorAll('mas-search-and-filters');
+                Array.from(searchFilters).forEach((sf) => expect(sf.createdByFilter).to.be.false);
+            });
+
+            it('forwards true to the cards tab only when opted in, leaving collections and placeholders off', async () => {
+                const el = await fixture(html`<mas-items-selector created-by-filter></mas-items-selector>`);
+                const searchFilters = el.shadowRoot.querySelectorAll('mas-search-and-filters');
+                const cardsFilter = Array.from(searchFilters).find((sf) => sf.type === TABLE_TYPE.CARDS);
+                const collectionsFilter = Array.from(searchFilters).find((sf) => sf.type === TABLE_TYPE.COLLECTIONS);
+                const placeholdersFilter = Array.from(searchFilters).find((sf) => sf.type === TABLE_TYPE.PLACEHOLDERS);
+                expect(cardsFilter.createdByFilter).to.be.true;
+                expect(collectionsFilter.createdByFilter).to.be.false;
+                expect(placeholdersFilter.createdByFilter).to.be.false;
+            });
+        });
     });
 
     describe('table configuration', () => {

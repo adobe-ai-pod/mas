@@ -1739,4 +1739,170 @@ describe('MasSearchAndFilters', () => {
             expect(el.tagFilter).to.not.include('mas:custom/featured');
         });
     });
+
+    describe('Created by filter (MWPW-188419)', () => {
+        let originalUsers;
+        let originalProfile;
+        let originalCreatedByUsers;
+
+        beforeEach(() => {
+            originalUsers = Store.users.get();
+            originalProfile = Store.profile.get();
+            originalCreatedByUsers = Store.createdByUsers.get();
+            Store.profile.set({ email: 'signed-in@adobe.com' });
+            Store.users.set([
+                { userPrincipalName: 'zoe@adobe.com', displayName: 'Zoe' },
+                { userPrincipalName: 'signed-in@adobe.com', displayName: 'Signed In' },
+                { userPrincipalName: 'alice@adobe.com', displayName: 'Alice' },
+            ]);
+        });
+
+        afterEach(() => {
+            Store.users.set(originalUsers);
+            Store.profile.set(originalProfile);
+            Store.createdByUsers.set(originalCreatedByUsers);
+        });
+
+        const lastChip = (el) => el.shadowRoot.querySelector('.filters').lastElementChild;
+
+        it('does not render the chip when createdByFilter is not opted in', async () => {
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            await el.updateComplete;
+            const filters = el.shadowRoot.querySelector('.filters').textContent;
+            expect(filters).to.not.include('Created by');
+        });
+
+        it('renders the chip as the last item in the filter chip row when opted in', async () => {
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            await el.updateComplete;
+            const last = lastChip(el);
+            expect(last.tagName.toLowerCase()).to.equal('overlay-trigger');
+            expect(last.querySelector('sp-action-button').textContent).to.include('Created by');
+        });
+
+        it('lists the signed-in author first, with nothing preselected', async () => {
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            await el.updateComplete;
+            expect(el.createdByUserFilter).to.deep.equal([]);
+            expect(el.createdByUserOptions[0]).to.deep.equal({ id: 'signed-in@adobe.com', title: 'Signed In' });
+            const checkboxes = lastChip(el).querySelectorAll('sp-checkbox');
+            expect(checkboxes[0].getAttribute('value')).to.equal('signed-in@adobe.com');
+            checkboxes.forEach((checkbox) => expect(checkbox.checked).to.be.false);
+        });
+
+        it('shows the selection count in the chip label after a checkbox is checked', async () => {
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            await el.updateComplete;
+            const checkbox = lastChip(el).querySelector('sp-checkbox[value="alice@adobe.com"]');
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+            await el.updateComplete;
+            expect(el.createdByUserFilter).to.deep.equal(['alice@adobe.com']);
+            expect(lastChip(el).querySelector('sp-action-button').textContent).to.include('Created by (1)');
+        });
+
+        it('renders a deletable chip per selected author and removes only the deleted one', async () => {
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            el.createdByUserFilter = ['alice@adobe.com', 'zoe@adobe.com'];
+            await el.updateComplete;
+            expect(el.appliedFilters.filter((f) => f.type === FILTER_TYPE.CREATED_BY)).to.have.lengthOf(2);
+            const tag = [...el.shadowRoot.querySelectorAll('sp-tag')].find((t) => t.textContent.trim() === 'Alice');
+            tag.value = { type: FILTER_TYPE.CREATED_BY, id: 'alice@adobe.com' };
+            tag.dispatchEvent(new CustomEvent('delete', { bubbles: true }));
+            await el.updateComplete;
+            expect(el.createdByUserFilter).to.deep.equal(['zoe@adobe.com']);
+        });
+
+        it('clears the created-by selection on reset', async () => {
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            el.createdByUserFilter = ['alice@adobe.com'];
+            await el.updateComplete;
+            el.resetFilters();
+            expect(el.createdByUserFilter).to.deep.equal([]);
+        });
+
+        it('filters displayCards to the union of selected authors, intersected with other active filters', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({
+                    title: 'alice card',
+                    created: { by: 'alice@adobe.com' },
+                    tags: [{ id: 'mas:market_segments/com', title: 'Commercial' }],
+                }),
+                createMockFragment({ title: 'zoe card', created: { by: 'zoe@adobe.com' } }),
+                createMockFragment({ title: 'no-author card' }),
+            ]);
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            el.createdByUserFilter = ['alice@adobe.com', 'zoe@adobe.com'];
+            await el.updateComplete;
+            expect(
+                Store.translationProjects.displayCards
+                    .get()
+                    .map((c) => c.title)
+                    .sort(),
+            ).to.deep.equal(['alice card', 'zoe card']);
+
+            el.marketSegmentFilter = ['mas:market_segments/com'];
+            await el.updateComplete;
+            expect(Store.translationProjects.displayCards.get().map((c) => c.title)).to.deep.equal(['alice card']);
+        });
+
+        it('excludes fragments without created.by even when a created-by filter is active', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({ title: 'has-author', created: { by: 'alice@adobe.com' } }),
+                createMockFragment({ title: 'missing-author' }),
+            ]);
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            el.createdByUserFilter = ['alice@adobe.com'];
+            await el.updateComplete;
+            expect(Store.translationProjects.displayCards.get().map((c) => c.title)).to.deep.equal(['has-author']);
+        });
+
+        it('matches created.by case-insensitively', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({ title: 'shouty', created: { by: 'ALICE@adobe.com' } }),
+            ]);
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            el.createdByUserFilter = ['alice@adobe.com'];
+            await el.updateComplete;
+            expect(Store.translationProjects.displayCards.get().map((c) => c.title)).to.deep.equal(['shouty']);
+        });
+
+        it('never writes the screen-scoped selection to the global Store.createdByUsers', async () => {
+            const el = await fixture(
+                html`<mas-search-and-filters type="cards" .searchOnly=${false} created-by-filter></mas-search-and-filters>`,
+            );
+            const before = Store.createdByUsers.get();
+            el.createdByUserFilter = ['alice@adobe.com'];
+            await el.updateComplete;
+            expect(Store.createdByUsers.get()).to.equal(before);
+        });
+
+        it('renders no filter chips at all — including Created by — for the searchOnly instances used by Collections/Placeholders', async () => {
+            const el = await fixture(
+                html`<mas-search-and-filters
+                    type="collections"
+                    .searchOnly=${true}
+                    created-by-filter
+                ></mas-search-and-filters>`,
+            );
+            await el.updateComplete;
+            expect(el.shadowRoot.querySelector('.filters')).to.be.null;
+        });
+    });
 });
