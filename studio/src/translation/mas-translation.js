@@ -22,6 +22,7 @@ class MasTranslation extends LitElement {
         isDialogOpen: { type: Boolean, state: true },
         confirmDialogConfig: { type: Object, state: true },
         columns: { type: Set, state: true },
+        searchQuery: { type: String, state: true },
     };
 
     constructor() {
@@ -32,6 +33,7 @@ class MasTranslation extends LitElement {
         ]);
         this.isDialogOpen = false;
         this.confirmDialogConfig = null;
+        this.searchQuery = '';
         this.columns = new Set([
             { key: 'title', label: 'Translation Project' },
             { key: 'status', label: 'Status' },
@@ -51,6 +53,20 @@ class MasTranslation extends LitElement {
 
     get translationProjectsData() {
         return Store.translationProjects?.list?.data?.get() || [];
+    }
+
+    get filteredProjects() {
+        const projects = this.translationProjectsData;
+        if (!this.searchQuery) return projects;
+        const q = this.searchQuery.toLowerCase();
+        return projects.filter((project) => {
+            const title = project.get().title;
+            return title && title.toLowerCase().includes(q);
+        });
+    }
+
+    handleSearch(event) {
+        this.searchQuery = event.target.value.trim();
     }
 
     get confirmDialog() {
@@ -114,7 +130,7 @@ class MasTranslation extends LitElement {
                 ${this.translationProjectsTableHead}
                 <sp-table-body>
                     ${repeat(
-                        this.translationProjectsData,
+                        this.filteredProjects,
                         (translationProject) => translationProject.get().id,
                         (translationProject) => html`
                             <sp-table-row
@@ -303,8 +319,14 @@ class MasTranslation extends LitElement {
                     </sp-button>
                 </div>
                 <div class="translation-toolbar">
-                    <sp-search size="m" placeholder="Search" disabled></sp-search>
-                    <div>${this.translationProjectsData.length} result(s)</div>
+                    <sp-search
+                        size="m"
+                        placeholder="Search"
+                        .value=${this.searchQuery}
+                        @input=${this.handleSearch}
+                        @change=${this.handleSearch}
+                    ></sp-search>
+                    <div>${this.filteredProjects.length} result(s)</div>
                 </div>
                 ${this.confirmDialog}
                 <div class="translation-content">${this.translationsProjectsContent}</div>
