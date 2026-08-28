@@ -1483,7 +1483,9 @@ class MerchCardEditor extends LitElement {
                 </div>
                 <div class="section-title">Price and Promo</div>
                 <sp-field-group class="toggle" id="prices">
-                    <sp-field-label for="prices">Product price</sp-field-label>
+                    <sp-field-label for="prices"
+                        >${this.currentVariantMapping?.prices?.editorLabel ?? 'Product price'}</sp-field-label
+                    >
                     <rte-field
                         id="prices"
                         styling
@@ -1571,7 +1573,9 @@ class MerchCardEditor extends LitElement {
                 </sp-field-group>
                 <div class="section-title">Product details</div>
                 <sp-field-group class="toggle" id="description">
-                    <sp-field-label for="description">Product description</sp-field-label>
+                    <sp-field-label for="description"
+                        >${this.currentVariantMapping?.description?.editorLabel ?? 'Product description'}</sp-field-label
+                    >
                     <rte-field
                         id="description"
                         styling
@@ -1591,7 +1595,9 @@ class MerchCardEditor extends LitElement {
                     ${this.renderFieldStatusIndicator('description')}
                 </sp-field-group>
                 <sp-field-group class="toggle" id="shortDescription">
-                    <sp-field-label for="shortDescription">Short Description</sp-field-label>
+                    <sp-field-label for="shortDescription"
+                        >${this.currentVariantMapping?.shortDescription?.editorLabel ?? 'Short Description'}</sp-field-label
+                    >
                     <rte-field
                         id="shortDescription"
                         styling
@@ -1629,6 +1635,9 @@ class MerchCardEditor extends LitElement {
                 </sp-field-group>
                 <div class="section-title">Footer</div>
                 <sp-field-group class="toggle" id="ctas">
+                    ${this.currentVariantMapping?.ctas?.editorLabel
+                        ? html`<sp-field-label for="ctas">${this.currentVariantMapping.ctas.editorLabel}</sp-field-label>`
+                        : nothing}
                     <rte-field
                         id="ctas"
                         link

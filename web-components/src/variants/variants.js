@@ -33,6 +33,22 @@ import {
     FULL_PRICING_EXPRESS_AEM_FRAGMENT_MAPPING,
 } from './full-pricing-express.js';
 import { Headless, HEADLESS_AEM_FRAGMENT_MAPPING } from './headless.js';
+import {
+    HeadlessMarquee,
+    HEADLESS_MARQUEE_AEM_FRAGMENT_MAPPING,
+} from './headless-marquee.js';
+import {
+    HeadlessFaq,
+    HEADLESS_FAQ_AEM_FRAGMENT_MAPPING,
+} from './headless-faq.js';
+import {
+    HeadlessOfferTerms,
+    HEADLESS_OFFER_TERMS_AEM_FRAGMENT_MAPPING,
+} from './headless-offer-terms.js';
+import {
+    HeadlessPromoBar,
+    HEADLESS_PROMO_BAR_AEM_FRAGMENT_MAPPING,
+} from './headless-promo-bar.js';
 import { Mini, MINI_AEM_FRAGMENT_MAPPING } from './mini.js';
 import {
     CompareChartColumn,
@@ -139,6 +155,30 @@ registerVariant(
     'headless',
     Headless,
     HEADLESS_AEM_FRAGMENT_MAPPING,
+    Headless.variantStyle,
+);
+registerVariant(
+    'headless-marquee',
+    HeadlessMarquee,
+    HEADLESS_MARQUEE_AEM_FRAGMENT_MAPPING,
+    Headless.variantStyle,
+);
+registerVariant(
+    'headless-faq',
+    HeadlessFaq,
+    HEADLESS_FAQ_AEM_FRAGMENT_MAPPING,
+    Headless.variantStyle,
+);
+registerVariant(
+    'headless-offer-terms',
+    HeadlessOfferTerms,
+    HEADLESS_OFFER_TERMS_AEM_FRAGMENT_MAPPING,
+    Headless.variantStyle,
+);
+registerVariant(
+    'headless-promo-bar',
+    HeadlessPromoBar,
+    HEADLESS_PROMO_BAR_AEM_FRAGMENT_MAPPING,
     Headless.variantStyle,
 );
 registerVariant(

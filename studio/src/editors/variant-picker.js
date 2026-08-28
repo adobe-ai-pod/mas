@@ -24,6 +24,10 @@ export const VARIANT_NAMES = {
     SIMPLIFIED_PRICING_EXPRESS: 'simplified-pricing-express',
     FULL_PRICING_EXPRESS: 'full-pricing-express',
     HEADLESS: 'headless',
+    HEADLESS_MARQUEE: 'headless-marquee',
+    HEADLESS_FAQ: 'headless-faq',
+    HEADLESS_OFFER_TERMS: 'headless-offer-terms',
+    HEADLESS_PROMO_BAR: 'headless-promo-bar',
     MEDIA: 'media',
     COMPARE_CHART_COLUMN: 'compare-chart-column',
 };
@@ -110,6 +114,26 @@ export const VARIANTS = [
         label: 'Headless',
         value: VARIANT_NAMES.HEADLESS,
         surfaces: [SURFACES.SANDBOX, SURFACES.ACOM_CC, SURFACES.ACOM_DC],
+    },
+    {
+        label: 'Marquee Headless',
+        value: VARIANT_NAMES.HEADLESS_MARQUEE,
+        surfaces: [SURFACES.ACOM, SURFACES.ACOM_CC, SURFACES.ACOM_DC],
+    },
+    {
+        label: 'FAQ Headless',
+        value: VARIANT_NAMES.HEADLESS_FAQ,
+        surfaces: [SURFACES.ACOM, SURFACES.ACOM_CC, SURFACES.ACOM_DC],
+    },
+    {
+        label: 'Offer terms',
+        value: VARIANT_NAMES.HEADLESS_OFFER_TERMS,
+        surfaces: [SURFACES.ACOM, SURFACES.ACOM_CC, SURFACES.ACOM_DC],
+    },
+    {
+        label: 'Sticky banner/Blade',
+        value: VARIANT_NAMES.HEADLESS_PROMO_BAR,
+        surfaces: [SURFACES.ACOM, SURFACES.ACOM_CC, SURFACES.ACOM_DC],
     },
     {
         label: 'Mini Compare Chart',
