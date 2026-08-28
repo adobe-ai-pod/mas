@@ -1,5 +1,5 @@
 import { LitElement, html, nothing } from 'lit';
-import Store, { toggleSelection } from './store.js';
+import Store from './store.js';
 import './mas-fragment-status.js';
 import { CARD_MODEL_PATH } from './constants.js';
 import { getSpectrumVersion } from './constants/icon-library.js';
@@ -47,13 +47,9 @@ class MasFragmentRender extends LitElement {
 
     update(changedProperties) {
         if (changedProperties.has('fragmentStore')) {
-            this.#reactiveControllers.updateStores([this.fragmentStore, Store.selecting]);
+            this.#reactiveControllers.updateStores([this.fragmentStore, Store.selection]);
         }
         super.update(changedProperties);
-    }
-
-    select() {
-        toggleSelection(this.fragment.id);
     }
 
     get fragment() {
@@ -104,15 +100,6 @@ class MasFragmentRender extends LitElement {
         event.currentTarget.closest('.render-fragment').classList.remove('dragging');
     }
 
-    get selectionOverlay() {
-        if (!Store.selecting.value) return nothing;
-        return html`<div class="overlay" @click="${this.select}">
-            ${this.selected
-                ? html`<sp-icon-select-no size="xl" label="Remove from selection"></sp-icon-select-no>`
-                : html`<sp-icon-select-rectangle size="xl" label="Add to selection"></sp-icon-select-rectangle>`}
-        </div>`;
-    }
-
     get merchCard() {
         return html`<merch-card slot="trigger">
             <aem-fragment author fragment="${this.fragment.id}"></aem-fragment>
@@ -156,7 +143,6 @@ class MasFragmentRender extends LitElement {
 
                         <sp-tooltip slot="hover-content" placement="top">Double click the card to start editing.</sp-tooltip>
                     </overlay-trigger>
-                    ${this.selectionOverlay}
                 </sp-theme>
             </div>
         </div>`;

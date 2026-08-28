@@ -106,6 +106,98 @@ describe('MasFragment', () => {
         });
     });
 
+    describe('click selection', () => {
+        afterEach(() => {
+            Store.selecting.set(false);
+            Store.selection.set([]);
+        });
+
+        it('selects the fragment on a plain click in render view without opening the editor', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="render"></mas-fragment>`);
+            const card = el.querySelector('mas-fragment-render');
+
+            card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            await el.updateComplete;
+
+            expect(Store.selection.get()).to.deep.equal(['fragment-1']);
+            expect(card.hasAttribute('selected')).to.be.true;
+        });
+
+        it('opens the editor on dblclick in render view and leaves the selection unchanged', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="render"></mas-fragment>`);
+            const card = el.querySelector('mas-fragment-render');
+            const routerModule = await import('../src/router.js');
+            const navigateSpy = sandbox.stub(routerModule.default, 'navigateToFragmentEditor').resolves();
+
+            card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            card.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+            expect(navigateSpy.calledWith('fragment-1')).to.be.true;
+            expect(Store.selection.get()).to.deep.equal(['fragment-1']);
+        });
+
+        it('selects the fragment on a plain click in table view and marks the row selected', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="table"></mas-fragment>`);
+            const tableEl = el.querySelector('mas-fragment-table');
+            const row = el.querySelector('sp-table-row');
+
+            row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            await el.updateComplete;
+            await tableEl.updateComplete;
+
+            expect(Store.selection.get()).to.deep.equal(['fragment-1']);
+            expect(row.hasAttribute('selected')).to.be.true;
+        });
+
+        it('adds to the selection on a modifier click instead of replacing it', async () => {
+            const fragmentStoreA = createFragmentStore({ id: 'fragment-1' });
+            const fragmentStoreB = createFragmentStore({ id: 'fragment-2' });
+            const elA = await fixture(html`<mas-fragment .fragmentStore=${fragmentStoreA} view="render"></mas-fragment>`);
+            const elB = await fixture(html`<mas-fragment .fragmentStore=${fragmentStoreB} view="render"></mas-fragment>`);
+
+            elA.querySelector('mas-fragment-render').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            elB.querySelector('mas-fragment-render').dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+
+            expect(Store.selection.get()).to.deep.equal(['fragment-1', 'fragment-2']);
+        });
+
+        it('keeps an already-selected fragment as the sole selection on a plain click', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="render"></mas-fragment>`);
+            const card = el.querySelector('mas-fragment-render');
+
+            card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+            expect(Store.selection.get()).to.deep.equal(['fragment-1']);
+        });
+
+        it('does not change the selection when clicking the row action menu', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="table"></mas-fragment>`);
+            const actionMenu = el.querySelector('sp-action-menu');
+
+            actionMenu.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+            expect(Store.selection.get()).to.deep.equal([]);
+        });
+
+        it('leaves Store.selecting true after a click selection and false once deselected', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="render"></mas-fragment>`);
+            const card = el.querySelector('mas-fragment-render');
+
+            card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            expect(Store.selecting.get()).to.be.true;
+
+            card.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+            expect(Store.selecting.get()).to.be.false;
+        });
+    });
+
     describe('view rendering', () => {
         it('renders table view when view="table"', async () => {
             const fragmentStore = createFragmentStore();

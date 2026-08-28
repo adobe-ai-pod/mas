@@ -3,7 +3,8 @@ import './mas-fragment-render.js';
 import './mas-fragment-table.js';
 import './mas-fragment-variations.js';
 import { ReactiveStore } from './reactivity/reactive-store.js';
-import Store from './store.js';
+import Store, { selectOnly, toggleSelection } from './store.js';
+import { shouldIgnoreRowClickForSelection } from './common/utils/render-utils.js';
 import router from './router.js';
 import { styles } from './mas-fragment.css.js';
 import { MasRepository } from './mas-repository.js';
@@ -81,7 +82,7 @@ class MasFragment extends LitElement {
     }
 
     handleClick(event) {
-        if (Store.selecting.value) return;
+        if (shouldIgnoreRowClickForSelection(event)) return;
         clearTimeout(tooltipTimeout.get());
         const currentTarget = event.currentTarget;
         tooltipTimeout.set(
@@ -89,6 +90,9 @@ class MasFragment extends LitElement {
                 currentTarget.classList.add('has-tooltip');
             }, 500),
         );
+        const id = this.fragmentStore.value.id;
+        if (event.metaKey || event.ctrlKey || event.shiftKey) toggleSelection(id);
+        else selectOnly(id);
     }
 
     async toggleExpand(e) {
@@ -131,7 +135,6 @@ class MasFragment extends LitElement {
     }
 
     async edit(event) {
-        if (Store.selecting.value) return;
         // Remove tooltip
         clearTimeout(tooltipTimeout.get());
         event.currentTarget.classList.remove('has-tooltip');

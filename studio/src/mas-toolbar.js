@@ -318,6 +318,7 @@ class MasToolbar extends LitElement {
     }
 
     handleSelectionPanelClose() {
+        Store.selection.set([]);
         Store.selecting.set(false);
     }
 

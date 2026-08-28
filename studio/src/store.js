@@ -342,12 +342,30 @@ function previewValidator(value) {
 // #endregion
 
 /**
+ * Applies a new selection and keeps Store.selecting in sync: enabled whenever
+ * the resulting selection is non-empty, disabled when it becomes empty.
+ */
+function applySelection(newSelection) {
+    Store.selection.set(newSelection);
+    Store.selecting.set(newSelection.length > 0);
+}
+
+/**
  * Toggle selection of a fragment
  */
 export function toggleSelection(id) {
     const selection = Store.selection.get();
-    if (selection.includes(id)) Store.selection.set(selection.filter((selectedId) => selectedId !== id));
-    else Store.selection.set([...selection, id]);
+    const newSelection = selection.includes(id) ? selection.filter((selectedId) => selectedId !== id) : [...selection, id];
+    applySelection(newSelection);
+}
+
+/**
+ * Replace the current selection with exactly this fragment.
+ */
+export function selectOnly(id) {
+    const selection = Store.selection.get();
+    if (selection.length === 1 && selection[0] === id) return;
+    applySelection([id]);
 }
 
 /**

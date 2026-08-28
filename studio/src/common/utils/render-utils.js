@@ -104,6 +104,7 @@ export function shouldIgnoreRowClickForSelection(event) {
     return event.composedPath().some((node) => {
         if (!(node instanceof Element)) return false;
         if (node.tagName === 'SP-CHECKBOX') return true;
+        if (node.tagName === 'SP-TABLE-CHECKBOX-CELL') return true;
         if (node.classList?.contains('expand-button')) return true;
         if (node.classList?.contains('copy-icon-button')) return true;
         if (node.tagName === 'SP-ACTION-BUTTON') return true;

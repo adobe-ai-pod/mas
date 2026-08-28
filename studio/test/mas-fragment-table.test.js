@@ -260,10 +260,10 @@ describe('MasFragmentTable', () => {
             await el.updateComplete;
 
             const titleCell = el.querySelector('sp-table-cell.title');
-            el.handleNestedRowClick({ composedPath: () => [titleCell] });
+            el.handleNestedRowClick({ composedPath: () => [titleCell], stopPropagation: sandbox.stub() });
             expect(Store.selection.get()).to.deep.equal(['variation-1']);
 
-            el.handleNestedRowClick({ composedPath: () => [titleCell] });
+            el.handleNestedRowClick({ composedPath: () => [titleCell], stopPropagation: sandbox.stub() });
             expect(Store.selection.get()).to.deep.equal([]);
         });
 
@@ -391,7 +391,7 @@ describe('MasFragmentTable', () => {
             await el.updateComplete;
 
             const titleCell = el.querySelector('sp-table-cell.title');
-            el.handleNestedRowClick({ composedPath: () => [titleCell] });
+            el.handleNestedRowClick({ composedPath: () => [titleCell], stopPropagation: sandbox.stub() });
             expect(Store.selection.get()).to.deep.equal(['grouped-1']);
         });
     });
