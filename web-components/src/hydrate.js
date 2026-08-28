@@ -1,6 +1,7 @@
 import { SELECTOR_MAS_INLINE_PRICE } from './constants.js';
 import { UptLink } from './upt-link.js';
 import { createTag } from './utils.js';
+import { normalizeImageUrl } from './image-url.js';
 
 const DEFAULT_BADGE_COLOR = '#000000';
 const DEFAULT_BADGE_BACKGROUND_COLOR = '#F8D904';
@@ -83,7 +84,7 @@ export function processMnemonics(fields, merchCard, mnemonicsConfig) {
 
         const attrs = {
             slot: 'icons',
-            src,
+            src: normalizeImageUrl(src),
             loading: merchCard.loading,
             size: mnemonicsConfig?.size ?? 'l',
         };
@@ -356,9 +357,10 @@ export function processBackgroundImage(
     backgroundImageConfig,
 ) {
     if (fields.backgroundImage) {
+        const backgroundImage = normalizeImageUrl(fields.backgroundImage);
         const imgAttributes = {
             loading: merchCard.loading ?? 'lazy',
-            src: fields.backgroundImage,
+            src: backgroundImage,
         };
         if (fields.backgroundImageAltText) {
             imgAttributes.alt = fields.backgroundImageAltText;
@@ -369,7 +371,7 @@ export function processBackgroundImage(
         if (backgroundImageConfig?.attribute) {
             merchCard.setAttribute(
                 backgroundImageConfig.attribute,
-                fields.backgroundImage,
+                backgroundImage,
             );
             return;
         }
