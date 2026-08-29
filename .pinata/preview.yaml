@@ -260,6 +260,17 @@ surfaces:
       # sandbox content is untouched. Selectors are the action cell's own
       # aria-labels (light DOM, like the version-history surface).
       states:
+          # BEFORE row-editing: a row being edited swaps its action cell to
+          # Save/Cancel, so the More button this state clicks would be gone.
+          # Opening the menu mutates nothing — it is render-only until an item
+          # is clicked, and these steps click none.
+          - name: row-menu-open
+            steps:
+                - wait_for: 'mas-placeholders-item button[aria-label="More options"]'
+                - click: 'mas-placeholders-item button[aria-label="More options"]'
+                - wait_for: '.dropdown-menu .dropdown-item'
+                # the menu is plain conditional render; a beat for icons/fonts
+                - wait_ms: 300
           - name: row-editing
             steps:
                 - wait_for: 'mas-placeholders-item button[aria-label="Edit placeholder"]'
