@@ -86,6 +86,14 @@ auth_profiles:
             username: cod23684+masautomation@adobetest.com
             password_env: IMS_PASS
         idp_hosts: [auth.services.adobe.com, ims-na1.adobelogin.com]
+        # The sign-in cannot start until the page itself fetches imslib, and
+        # the cluster egress intermittently resets headless Chromium on exactly
+        # that fetch (net::ERR_HTTP2_PROTOCOL_ERROR; Dev run 5976e594,
+        # 2026-08-29) while other engines get through. Declared, the engine
+        # treats that one failure as environmental and relaunches the login on
+        # its fallback engine instead of escalating a timeout to a human.
+        bootstrap_assets:
+            - https://www.adobe.com/libs/deps/imslib.min.js
         steps:
             # Studio signs in via a client-side imslib redirect: the page is
             # still on its own origin when the steps start, and the fill guard
