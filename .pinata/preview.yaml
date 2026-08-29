@@ -247,11 +247,26 @@ surfaces:
           M@S Studio Placeholders page for the sandbox folder: the placeholders
           table with row checkboxes and the selection action bar (Copy Code,
           delete, publish). Pick for changes under studio/src/placeholders or
-          the selection panel/action bar as used by placeholders.
+          the selection panel/action bar as used by placeholders. Also captures
+          the first row in editing state (row-editing below), so criteria about
+          what the action cell shows while editing are observable instead of
+          escalating as an evidence gap (run 09233835, criterion
+          'not_observable', 2026-08-29).
       match: 'studio/src/placeholders/*'
       requires:
           - /studio/libs/swc.js
           - /web-components/dist/mas.js
+      # Row editing is client-side until Save; these steps never save, so the
+      # sandbox content is untouched. Selectors are the action cell's own
+      # aria-labels (light DOM, like the version-history surface).
+      states:
+          - name: row-editing
+            steps:
+                - wait_for: 'mas-placeholders-item button[aria-label="Edit placeholder"]'
+                - click: 'mas-placeholders-item button[aria-label="Edit placeholder"]'
+                - wait_for: 'button[aria-label="Save changes"]'
+                # the edit fields (and the RTE, for rich-text rows) settle in
+                - wait_ms: 800
 
     - id: studio-translations
       url: https://mas.adobe.com/studio.html?aem.env=stage#page=translations&path=sandbox
