@@ -329,6 +329,40 @@ describe('class "InlinePrice"', () => {
         });
     });
 
+    describe('aria-label preservation', () => {
+        it('preserves aria-label set before render', async () => {
+            await initMasCommerceService();
+            const inlinePrice = mockInlinePrice('ariaPreserve', 'puf');
+            inlinePrice.setAttribute('aria-label', 'Acrobat Pro price');
+            await inlinePrice.onceSettled();
+            expect(inlinePrice.getAttribute('aria-label')).to.equal(
+                'Acrobat Pro price',
+            );
+        });
+
+        it('preserves aria-label through attribute change and re-render', async () => {
+            await initMasCommerceService();
+            const inlinePrice = mockInlinePrice('ariaRerender', 'puf');
+            await inlinePrice.onceSettled();
+            inlinePrice.setAttribute('aria-label', 'Updated price label');
+            await inlinePrice.onceSettled();
+            expect(inlinePrice.getAttribute('aria-label')).to.equal(
+                'Updated price label',
+            );
+        });
+
+        it('createInlinePrice forwards ariaLabel option as aria-label attribute', async () => {
+            await initMasCommerceService();
+            const inlinePrice = InlinePrice.createInlinePrice({
+                wcsOsi: 'puf',
+                ariaLabel: 'Special price label',
+            });
+            expect(inlinePrice.getAttribute('aria-label')).to.equal(
+                'Special price label',
+            );
+        });
+    });
+
     describe('method "requestUpdate"', () => {
         it('has requestUpdate method', async () => {
             await initMasCommerceService();

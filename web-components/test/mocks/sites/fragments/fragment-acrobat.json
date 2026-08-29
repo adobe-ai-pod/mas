@@ -15,11 +15,11 @@
         "prices": { "mimeType": "text/html" },
         "shortDescription": { "mimeType": "text/html" },
         "description": {
-            "value": "<p><strong>Save 40% on your plan.</strong></p><p><strong><span is=\"inline-price\" data-display-per-unit=\"false\" data-quantity=\"1\" data-template=\"price\" data-wcs-osi=\"BNTtrDS9wbigrk5Hjeyn6BO62hcRZ-X5fJM9nLqJL6c\"></span></strong></p><p><span id=\"_mce_caret\" data-mce-bogus=\"1\" data-mce-type=\"format-caret\"><a href=\"https://www.adobe.com/creativecloud/plans.html\">See terms</a></span></p>",
+            "value": "<p><strong>Save 40% on your plan.</strong></p><p><strong><span is=\"inline-price\" aria-label=\"Acrobat Pro price\" data-display-per-unit=\"false\" data-quantity=\"1\" data-template=\"price\" data-wcs-osi=\"BNTtrDS9wbigrk5Hjeyn6BO62hcRZ-X5fJM9nLqJL6c\"></span></strong></p><p><span id=\"_mce_caret\" data-mce-bogus=\"1\" data-mce-type=\"format-caret\"><a href=\"https://www.adobe.com/creativecloud/plans.html\">See terms</a></span></p>",
             "mimeType": "text/html"
         },
         "ctas": {
-            "value": "<p><strong><a is=\"checkout-link\" data-checkout-workflow=\"UCv3\" data-checkout-workflow-step=\"email\" data-promotion-code=\"\" data-quantity=\"1\" data-wcs-osi=\"Mutn1LYoGojkrcMdCLO7LQlx1FyTHw27ETsfLv0h8DQ\" href=\"\">Buy now</a></strong></p>",
+            "value": "<p><strong><a is=\"checkout-link\" aria-label=\"Buy Acrobat Pro\" data-checkout-workflow=\"UCv3\" data-checkout-workflow-step=\"email\" data-promotion-code=\"\" data-quantity=\"1\" data-wcs-osi=\"Mutn1LYoGojkrcMdCLO7LQlx1FyTHw27ETsfLv0h8DQ\" href=\"\">Buy now</a></strong></p>",
             "mimeType": "text/html"
         },
         "stockOffer": { "mimeType": "text/html" },

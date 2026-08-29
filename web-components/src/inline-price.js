@@ -225,6 +225,7 @@ export class InlinePrice extends HTMLSpanElement {
     static tag = 'span';
     static get observedAttributes() {
         return [
+            'aria-label',
             'data-display-old-price',
             'data-display-per-unit',
             'data-display-recurrence',
@@ -273,6 +274,8 @@ export class InlinePrice extends HTMLSpanElement {
             template,
             wcsOsi,
         });
+        if (options?.ariaLabel)
+            element.setAttribute('aria-label', options.ariaLabel);
         return element;
     }
 

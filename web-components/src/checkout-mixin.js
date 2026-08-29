@@ -52,6 +52,8 @@ export function createCheckoutElement(Class, options = {}, innerHTML = '') {
         extraOptions,
         analyticsId,
     });
+    if (options.ariaLabel)
+        element.setAttribute('aria-label', options.ariaLabel);
     if (innerHTML)
         element.innerHTML = `<span style="pointer-events: none;">${innerHTML}</span>`;
     return element;
@@ -120,6 +122,7 @@ export function CheckoutMixin(Base) {
 
         static get observedAttributes() {
             return [
+                'aria-label',
                 'data-checkout-workflow',
                 'data-checkout-workflow-step',
                 'data-extra-options',

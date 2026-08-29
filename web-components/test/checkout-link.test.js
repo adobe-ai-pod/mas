@@ -280,6 +280,40 @@ describe('class "CheckoutLink"', () => {
         });
     });
 
+    describe('aria-label preservation', () => {
+        it('preserves aria-label set before render', async () => {
+            initMasCommerceService();
+            const checkoutLink = mockCheckoutLink('abm');
+            checkoutLink.setAttribute('aria-label', 'Buy Acrobat Pro');
+            await checkoutLink.onceSettled();
+            expect(checkoutLink.getAttribute('aria-label')).to.equal(
+                'Buy Acrobat Pro',
+            );
+        });
+
+        it('preserves aria-label through attribute change and re-render', async () => {
+            initMasCommerceService();
+            const checkoutLink = mockCheckoutLink('abm');
+            await checkoutLink.onceSettled();
+            checkoutLink.setAttribute('aria-label', 'Updated label');
+            await checkoutLink.onceSettled();
+            expect(checkoutLink.getAttribute('aria-label')).to.equal(
+                'Updated label',
+            );
+        });
+
+        it('createCheckoutLink forwards ariaLabel option as aria-label attribute', async () => {
+            initMasCommerceService();
+            const checkoutLink = CheckoutLink.createCheckoutLink(
+                { wcsOsi: 'abm', ariaLabel: 'Buy now special' },
+                'Buy now',
+            );
+            expect(checkoutLink.getAttribute('aria-label')).to.equal(
+                'Buy now special',
+            );
+        });
+    });
+
     describe('3-in-1 modal related functions', () => {
         it('sets the isOpen3in1Modal property', async () => {
             await initMasCommerceService();
