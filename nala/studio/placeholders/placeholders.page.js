@@ -40,6 +40,11 @@ export default class PlaceholdersPage {
         this.toastPositive = page.locator('mas-toast >> sp-toast[variant="positive"]');
         this.toastNegative = page.locator('mas-toast >> sp-toast[variant="negative"]');
         this.toastInfo = page.locator('mas-toast >> sp-toast[variant="info"]');
+
+        // Action menu / Copy Code
+        this.firstRowMoreOptionsButton = page.locator('mas-placeholders-item').first().locator('button[aria-label="More options"]');
+        this.firstRowDropdownMenu = page.locator('mas-placeholders-item').first().locator('.dropdown-menu');
+        this.firstRowCopyCodeItem = page.locator('mas-placeholders-item').first().locator('.dropdown-item').filter({ hasText: 'Copy Code' });
     }
 
     // Helper methods

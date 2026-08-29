@@ -122,4 +122,31 @@ test.describe('M@S Studio Placeholders Test Suite', () => {
             expect(rowCount).toBeGreaterThan(1); // Should show more than just the test placeholder
         });
     });
+
+    // Test 3: @studio-placeholders-copy-code - Validate Copy Code action in placeholder row dropdown
+    test(`${features[3].name},${features[3].tags}`, async ({ page, baseURL }) => {
+        const testPage = `${baseURL}${features[3].path}${miloLibs}${features[3].browserParams}`;
+        setTestPage(testPage);
+
+        await test.step('step-1: Navigate to placeholders page', async () => {
+            await page.goto(testPage);
+            await page.waitForLoadState('domcontentloaded');
+        });
+
+        await test.step('step-2: Open More options dropdown for first row', async () => {
+            await placeholders.waitForTableToLoad();
+            await expect(placeholders.firstRowMoreOptionsButton).toBeVisible();
+            await placeholders.firstRowMoreOptionsButton.click();
+            await expect(placeholders.firstRowDropdownMenu).toBeVisible();
+        });
+
+        await test.step('step-3: Verify Copy Code item is present in dropdown', async () => {
+            await expect(placeholders.firstRowCopyCodeItem).toBeVisible();
+        });
+
+        await test.step('step-4: Click Copy Code and verify success toast', async () => {
+            await placeholders.firstRowCopyCodeItem.click();
+            await expect(placeholders.toastPositive).toBeVisible({ timeout: 5000 });
+        });
+    });
 });
