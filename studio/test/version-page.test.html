@@ -298,6 +298,7 @@
                             expect(versionPage.handleVersionClick).to.be.a('function');
                             expect(versionPage.handleRestoreVersion).to.be.a('function');
                             expect(versionPage.hydrateCard).to.be.a('function');
+                            expect(versionPage.getAuthorLabel).to.be.a('function');
                         });
 
                         it('should initialize with repository property', async () => {
@@ -308,6 +309,51 @@
                         it('should initialize pendingHydrations and hydratedCards', () => {
                             expect(versionPage.pendingHydrations).to.be.an.instanceof(Map);
                             expect(versionPage.hydratedCards).to.be.an.instanceof(Set);
+                        });
+                    });
+
+                    describe('getAuthorLabel', () => {
+                        beforeEach(async () => {
+                            versionPage = await fixture(html`<version-page></version-page>`);
+                            await versionPage.updateComplete;
+                        });
+
+                        it('service account: primary is System, title is raw identifier', () => {
+                            const label = versionPage.getAuthorLabel({
+                                createdBy: 'System',
+                                createdByIsService: true,
+                                createdByRaw: 'workflow-service',
+                            });
+                            expect(label.primary).to.equal('System');
+                            expect(label.title).to.equal('workflow-service');
+                            expect(label.secondary).to.be.null;
+                        });
+
+                        it('directory-resolved: primary is display name, secondary is email', () => {
+                            const label = versionPage.getAuthorLabel({
+                                createdBy: 'user3@example.com',
+                                createdByName: 'Alex Johnson',
+                                createdByEmail: 'user3@example.com',
+                                createdByIsService: false,
+                            });
+                            expect(label.primary).to.equal('Alex Johnson');
+                            expect(label.secondary).to.equal('user3@example.com');
+                            expect(label.title).to.be.null;
+                        });
+
+                        it('email-only: primary is email, no secondary', () => {
+                            const label = versionPage.getAuthorLabel({
+                                createdBy: 'user@example.com',
+                                createdByEmail: 'user@example.com',
+                                createdByIsService: false,
+                            });
+                            expect(label.primary).to.equal('user@example.com');
+                            expect(label.secondary).to.be.null;
+                        });
+
+                        it('empty version: primary is Unknown', () => {
+                            const label = versionPage.getAuthorLabel({});
+                            expect(label.primary).to.equal('Unknown');
                         });
                     });
                 });

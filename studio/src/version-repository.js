@@ -1,5 +1,82 @@
 import Events from './events.js';
 
+export const SERVICE_ACCOUNT_IDENTIFIERS = new Set(['workflow-service']);
+
+/**
+ * Extract the author identity string from an AEM fragment or version item,
+ * checking the known field shapes in priority order.
+ * Strips leading "user:" / "ims:" prefixes that some AEM implementations add.
+ * @param {object} source
+ * @returns {string|null}
+ */
+export function extractAuthorIdentity(source) {
+    if (!source) return null;
+    const raw = source.createdBy || source.modifiedBy || source.created?.by || source.modified?.by || source.author || null;
+    if (!raw) return null;
+    const trimmed = String(raw).trim();
+    // Strip "user:" or "ims:" style prefixes
+    return trimmed.replace(/^(?:user|ims):/i, '') || null;
+}
+
+/**
+ * Resolve an author identity string into a display descriptor.
+ * @param {string|null} identity
+ * @param {Array<{userPrincipalName: string, displayName: string}>} users
+ * @returns {{ identity: string|null, email: string|null, displayName: string|null, label: string, isServiceAccount: boolean }}
+ */
+export function resolveAuthorLabel(identity, users = []) {
+    if (!identity || SERVICE_ACCOUNT_IDENTIFIERS.has(identity)) {
+        return {
+            identity,
+            email: null,
+            displayName: null,
+            label: 'System',
+            isServiceAccount: true,
+        };
+    }
+
+    const lowerIdentity = identity.toLowerCase();
+    const match = users.find((u) => u.userPrincipalName?.toLowerCase() === lowerIdentity);
+    if (match) {
+        return {
+            identity,
+            email: match.userPrincipalName,
+            displayName: match.displayName || null,
+            label: match.displayName || match.userPrincipalName,
+            isServiceAccount: false,
+        };
+    }
+
+    // Unmatched but looks like an email — show as-is
+    return {
+        identity,
+        email: identity,
+        displayName: null,
+        label: identity,
+        isServiceAccount: false,
+    };
+}
+
+/**
+ * Apply author resolution to a version item, returning the item with
+ * additional author fields populated.
+ * @param {object} item
+ * @param {Array} users
+ * @returns {object}
+ */
+function applyAuthorResolution(item, users) {
+    const identity = extractAuthorIdentity(item);
+    const resolved = resolveAuthorLabel(identity, users);
+    return {
+        ...item,
+        createdBy: resolved.isServiceAccount ? 'System' : resolved.email || identity || 'System',
+        createdByName: resolved.displayName || null,
+        createdByEmail: resolved.email || null,
+        createdByIsService: resolved.isServiceAccount,
+        createdByRaw: identity,
+    };
+}
+
 /**
  * Repository for version-related data operations.
  * Handles loading, saving, and restoring fragment versions.
@@ -14,7 +91,7 @@ export class VersionRepository {
      * @param {string} fragmentId - The fragment ID
      * @returns {Promise<{fragment: Object, versions: Array, currentVersion: Object}>}
      */
-    async loadVersionHistory(fragmentId) {
+    async loadVersionHistory(fragmentId, { users = [] } = {}) {
         try {
             // Load the current fragment
             const fragment = await this.repository.aem.sites.cf.fragments.getById(fragmentId);
@@ -34,20 +111,28 @@ export class VersionRepository {
                 modifiedDate = new Date().toISOString();
             }
 
-            const currentVersion = {
+            const rawCurrentVersion = {
                 id: 'current',
                 version: 'Current',
                 created: modifiedDate,
-                createdBy: fragment.modifiedBy || fragment.modified?.by || 'System',
                 isCurrent: true,
             };
+            const currentVersion = applyAuthorResolution(
+                { ...rawCurrentVersion, modifiedBy: fragment.modifiedBy, modified: fragment.modified },
+                users,
+            );
+            // createdBy must fall back to 'System' (not null) when no identity found
+            if (!currentVersion.createdBy) currentVersion.createdBy = 'System';
 
             // Load version history
             const versionsResponse = await this.repository.aem.sites.cf.fragments.getVersions(fragmentId);
             const historicalVersions = versionsResponse?.items || [];
 
+            // Normalise author fields on every historical item
+            const normalisedHistoricalVersions = historicalVersions.map((item) => applyAuthorResolution(item, users));
+
             // Combine current version with historical versions
-            const versions = [currentVersion, ...historicalVersions];
+            const versions = [currentVersion, ...normalisedHistoricalVersions];
 
             return {
                 fragment,
@@ -148,6 +233,8 @@ export class VersionRepository {
             return (
                 version.version?.toLowerCase().includes(lowerQuery) ||
                 version.createdBy?.toLowerCase().includes(lowerQuery) ||
+                version.createdByName?.toLowerCase().includes(lowerQuery) ||
+                version.createdByEmail?.toLowerCase().includes(lowerQuery) ||
                 version.created?.toLowerCase().includes(lowerQuery) ||
                 version.comment?.toLowerCase().includes(lowerQuery)
             );
