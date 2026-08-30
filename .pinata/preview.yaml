@@ -21,8 +21,8 @@ local:
     # view rendering an empty list, which photographs as real evidence.
     cmd: 'PROXY_PORT=8091 npm --prefix studio run proxy:stage & until curl -s -o /dev/null -X OPTIONS http://127.0.0.1:8091/; do sleep 0.5; done; aem up --port=3000 --no-open --stop-other --url https://main--mas--adobecom.aem.page'
     # Push the Close branch at verification time too, so the share URL a human
-    # sees at escalation (and in the PR body) resolves instead of 404ing until
-    # approval. The gate's share_sync probe vouches for propagation.
+    # sees on the run page (and in the PR body) resolves instead of 404ing until
+    # the PR is open. The gate's share_sync probe vouches for propagation.
     publish_branch: true
     # proxy.port tells studio.html which author proxy to call; galleries ignore it.
     # aem.env=stage pins Studio's WHOLE environment to stage: locally the author
@@ -127,7 +127,8 @@ auth_profiles:
         settle_ms: 5000
 
 # Demo galleries under web-components/docs/ (code-bus pages, real fragments).
-# Every surface declares a match glob; a change no glob covers escalates.
+# Every surface declares a match glob; a change no glob covers is recorded as
+# unverified (the visual gate is advisory — gates.yaml).
 surfaces:
     - id: merch-card
       page: /web-components/docs/merch-card.html
