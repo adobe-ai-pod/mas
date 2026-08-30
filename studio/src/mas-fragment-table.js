@@ -98,7 +98,7 @@ class MasFragmentTable extends LitElement {
     get icon() {
         const iconSrc = this.data.getFieldValue('mnemonicIcon'); // Returns only the first one
         if (!iconSrc) return '';
-        return html`<img class="mnemonic-icon" src=${this.data.getFieldValue('mnemonicIcon')} />`;
+        return html`<img class="mnemonic-icon" src=${this.data.getFieldValue('mnemonicIcon')} alt="" />`;
     }
 
     get name() {
