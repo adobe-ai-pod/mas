@@ -1,6 +1,11 @@
 import { expect } from '@esm-bundle/chai';
 import sinon from 'sinon';
-import { VersionRepository } from '../src/version-repository.js';
+import {
+    VersionRepository,
+    extractAuthorIdentity,
+    resolveAuthorLabel,
+    SERVICE_ACCOUNT_IDENTIFIERS,
+} from '../src/version-repository.js';
 import Events from '../src/events.js';
 
 describe('VersionRepository', () => {
@@ -82,6 +87,106 @@ describe('VersionRepository', () => {
 
             expect(result.currentVersion.created).to.be.a('string');
             expect(result.currentVersion.createdBy).to.equal('System');
+        });
+
+        it('should normalise workflow-service to System with service flags', async () => {
+            const fragment = { id: 'fragment-1', modifiedBy: 'workflow-service' };
+            mockRepository.aem.sites.cf.fragments.getById.resolves(fragment);
+            mockRepository.aem.sites.cf.fragments.getVersions.resolves({ items: [] });
+
+            const result = await versionRepository.loadVersionHistory('fragment-1');
+
+            expect(result.currentVersion.createdBy).to.equal('System');
+            expect(result.currentVersion.createdByIsService).to.be.true;
+            expect(result.currentVersion.createdByRaw).to.equal('workflow-service');
+            expect(result.versions.every((v) => v.createdBy !== 'workflow-service')).to.be.true;
+        });
+
+        it('should resolve directory entry and populate display name', async () => {
+            const fragment = { id: 'fragment-1', modifiedBy: 'user@example.com' };
+            const users = [{ userPrincipalName: 'user@example.com', displayName: 'Alex Johnson' }];
+            mockRepository.aem.sites.cf.fragments.getById.resolves(fragment);
+            mockRepository.aem.sites.cf.fragments.getVersions.resolves({ items: [] });
+
+            const result = await versionRepository.loadVersionHistory('fragment-1', { users });
+
+            expect(result.currentVersion.createdBy).to.equal('user@example.com');
+            expect(result.currentVersion.createdByName).to.equal('Alex Johnson');
+            expect(result.currentVersion.createdByEmail).to.equal('user@example.com');
+        });
+
+        it('should normalise author fields on historical items', async () => {
+            const fragment = { id: 'fragment-1', modifiedBy: 'user@example.com' };
+            const versionsResponse = {
+                items: [
+                    { id: 'v1', version: '1.0', modifiedBy: 'workflow-service' },
+                    { id: 'v2', version: '2.0', created: { by: 'bob@example.com' } },
+                ],
+            };
+            mockRepository.aem.sites.cf.fragments.getById.resolves(fragment);
+            mockRepository.aem.sites.cf.fragments.getVersions.resolves(versionsResponse);
+
+            const result = await versionRepository.loadVersionHistory('fragment-1');
+
+            const v1 = result.versions.find((v) => v.id === 'v1');
+            expect(v1.createdBy).to.equal('System');
+            expect(v1.createdByIsService).to.be.true;
+
+            const v2 = result.versions.find((v) => v.id === 'v2');
+            expect(v2.createdByEmail).to.equal('bob@example.com');
+        });
+    });
+
+    describe('extractAuthorIdentity', () => {
+        it('should return modifiedBy when present', () => {
+            expect(extractAuthorIdentity({ modifiedBy: 'user@example.com' })).to.equal('user@example.com');
+        });
+
+        it('should return modified.by when modifiedBy absent', () => {
+            expect(extractAuthorIdentity({ modified: { by: 'user@example.com' } })).to.equal('user@example.com');
+        });
+
+        it('should return createdBy first when present', () => {
+            expect(extractAuthorIdentity({ createdBy: 'a@b.com', modifiedBy: 'c@d.com' })).to.equal('a@b.com');
+        });
+
+        it('should strip user: prefix', () => {
+            expect(extractAuthorIdentity({ modifiedBy: 'user:alice@example.com' })).to.equal('alice@example.com');
+        });
+
+        it('should return null for empty source', () => {
+            expect(extractAuthorIdentity({})).to.be.null;
+            expect(extractAuthorIdentity(null)).to.be.null;
+        });
+    });
+
+    describe('resolveAuthorLabel', () => {
+        it('should mark workflow-service as service account with System label', () => {
+            const result = resolveAuthorLabel('workflow-service', []);
+            expect(result.isServiceAccount).to.be.true;
+            expect(result.label).to.equal('System');
+            expect(result.identity).to.equal('workflow-service');
+        });
+
+        it('should resolve directory match', () => {
+            const users = [{ userPrincipalName: 'user@example.com', displayName: 'Alex Johnson' }];
+            const result = resolveAuthorLabel('user@example.com', users);
+            expect(result.displayName).to.equal('Alex Johnson');
+            expect(result.email).to.equal('user@example.com');
+            expect(result.isServiceAccount).to.be.false;
+        });
+
+        it('should return email-only for unmatched email identity', () => {
+            const result = resolveAuthorLabel('unknown@example.com', []);
+            expect(result.email).to.equal('unknown@example.com');
+            expect(result.displayName).to.be.null;
+            expect(result.isServiceAccount).to.be.false;
+        });
+
+        it('should mark null identity as service account', () => {
+            const result = resolveAuthorLabel(null, []);
+            expect(result.isServiceAccount).to.be.true;
+            expect(result.label).to.equal('System');
         });
     });
 
@@ -363,6 +468,44 @@ describe('VersionRepository', () => {
             const result = versionRepository.searchVersions(versions, 'features');
             expect(result).to.have.lengthOf(1);
             expect(result[0].comment).to.include('features');
+        });
+
+        it('should filter by createdByName', () => {
+            const versionsWithName = [
+                {
+                    version: '1.0',
+                    createdBy: 'alice@example.com',
+                    createdByName: 'Alice Smith',
+                    created: '2024-01-15',
+                    comment: '',
+                },
+                {
+                    version: '2.0',
+                    createdBy: 'bob@example.com',
+                    createdByName: 'Bob Jones',
+                    created: '2024-01-16',
+                    comment: '',
+                },
+            ];
+            const result = versionRepository.searchVersions(versionsWithName, 'alice smith');
+            expect(result).to.have.lengthOf(1);
+            expect(result[0].createdByName).to.equal('Alice Smith');
+        });
+
+        it('should filter by createdByEmail', () => {
+            const versionsWithEmail = [
+                { version: '1.0', createdBy: 'System', createdByEmail: null, created: '2024-01-15', comment: '' },
+                {
+                    version: '2.0',
+                    createdBy: 'carol@example.com',
+                    createdByEmail: 'carol@example.com',
+                    created: '2024-01-16',
+                    comment: '',
+                },
+            ];
+            const result = versionRepository.searchVersions(versionsWithEmail, 'carol');
+            expect(result).to.have.lengthOf(1);
+            expect(result[0].createdByEmail).to.equal('carol@example.com');
         });
     });
 });

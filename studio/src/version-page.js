@@ -219,6 +219,11 @@ class VersionPage extends LitElement {
             font-size: 18px;
             margin-bottom: 8px;
         }
+        .version-author-email {
+            font-size: 13px;
+            color: #494949;
+            margin-bottom: 4px;
+        }
 
         .version-description {
             font-size: 13px;
@@ -456,8 +461,10 @@ class VersionPage extends LitElement {
         this.pendingHydrations.clear();
 
         try {
+            const users = Store.users.get() || [];
             const { fragment, versions, currentVersion } = await this.versionRepository.loadVersionHistory(
                 this.fragmentId.value,
+                { users },
             );
 
             this.fragment = fragment;
@@ -581,6 +588,19 @@ class VersionPage extends LitElement {
         }
     }
 
+    getAuthorLabel(version) {
+        const primary =
+            version.createdByName ||
+            version.createdByEmail ||
+            (version.createdBy !== 'System' ? version.createdBy : null) ||
+            (version.createdByIsService ? 'System' : null) ||
+            version.createdBy ||
+            'Unknown';
+        const secondary = version.createdByEmail && version.createdByEmail !== primary ? version.createdByEmail : null;
+        const title = version.createdByIsService ? version.createdByRaw || null : null;
+        return { primary, secondary, title };
+    }
+
     get filteredVersions() {
         if (!this.versionRepository) return this.versions;
         return this.versionRepository.searchVersions(this.versions, this.searchQuery);
@@ -649,9 +669,16 @@ class VersionPage extends LitElement {
                             <div class="version-date-time">
                                 <sp-icon-calendar slot="icon"></sp-icon-calendar>${this.formatVersionDate(version.created)}
                             </div>
-                            <div class="version-author">
-                                By <span class="version-author-name">${version.createdBy || 'Unknown'}</span>
-                            </div>
+                            ${(() => {
+                                const { primary, secondary, title } = this.getAuthorLabel(version);
+                                return html`
+                                    <div class="version-author" title="${title || nothing}">
+                                        By
+                                        <span class="version-author-name">${primary}</span>
+                                        ${secondary ? html`<div class="version-author-email">${secondary}</div>` : nothing}
+                                    </div>
+                                `;
+                            })()}
                             ${version.title
                                 ? html`<div class="version-description"><strong>${version.title}</strong></div>`
                                 : nothing}
