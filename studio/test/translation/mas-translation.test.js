@@ -112,7 +112,7 @@ describe('MasTranslation', () => {
             const el = await fixture(html`<mas-translation></mas-translation>`);
             const search = el.shadowRoot.querySelector('sp-search');
             expect(search).to.exist;
-            expect(search.disabled).to.be.true;
+            expect(search.disabled).to.be.false;
         });
 
         it('should render result count', async () => {
@@ -705,6 +705,271 @@ describe('MasTranslation', () => {
             await new Promise((resolve) => setTimeout(resolve, 0));
             expect(loadingDuringDelete).to.be.true;
             expect(Store.translationProjects.list.loading.get()).to.be.false;
+        });
+    });
+
+    describe('search functionality', () => {
+        it('should render sp-search in translation-toolbar', async () => {
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            const search = el.shadowRoot.querySelector('.translation-toolbar sp-search');
+            expect(search).to.exist;
+        });
+
+        it('should have placeholder describing project search', async () => {
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            const search = el.shadowRoot.querySelector('sp-search');
+            expect(search.placeholder).to.equal('Search projects');
+        });
+
+        it('should filter rows case-insensitively by title', async () => {
+            const mockProjects = [
+                createMockTranslationProject('1', 'Spring Launch DE', 'User A'),
+                createMockTranslationProject('2', 'Summer Promo FR', 'User B'),
+            ];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'spring';
+            await el.updateComplete;
+            const rows = el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)');
+            expect(rows.length).to.equal(1);
+            expect(rows[0].querySelector('sp-table-cell').textContent).to.equal('Spring Launch DE');
+        });
+
+        it('should filter rows by submitter/creator column', async () => {
+            const mockProjects = [
+                createMockTranslationProject('1', 'Project A', 'Alice Smith'),
+                createMockTranslationProject('2', 'Project B', 'Bob Jones'),
+            ];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'alice';
+            await el.updateComplete;
+            const rows = el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)');
+            expect(rows.length).to.equal(1);
+            const cells = rows[0].querySelectorAll('sp-table-cell');
+            expect(cells[2].textContent).to.equal('Alice Smith');
+        });
+
+        it('should filter rows by status column', async () => {
+            const mockProjects = [
+                createMockTranslationProject('1', 'Project A', 'User A', null, 'RUNNING'),
+                createMockTranslationProject('2', 'Project B', 'User B', null, 'FAILED'),
+            ];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'running';
+            await el.updateComplete;
+            const rows = el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)');
+            expect(rows.length).to.equal(1);
+            const cells = rows[0].querySelectorAll('sp-table-cell');
+            expect(cells[1].textContent).to.equal('Running');
+        });
+
+        it('should not throw and exclude projects with null title/creator/status fields', async () => {
+            const nullProject = createMockTranslationProject('null-1', null, null, null, null);
+            const validProject = createMockTranslationProject('valid-1', 'Valid Project', 'Valid User');
+            Store.translationProjects.list.data.value = [nullProject, validProject];
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            let threw = false;
+            try {
+                el.searchQuery = 'valid';
+                await el.updateComplete;
+            } catch (_err) {
+                threw = true;
+            }
+            expect(threw).to.be.false;
+            const rows = el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)');
+            expect(rows.length).to.equal(1);
+        });
+
+        it('should restore full list when query is cleared via input event', async () => {
+            const mockProjects = [
+                createMockTranslationProject('1', 'Alpha Project', 'User 1'),
+                createMockTranslationProject('2', 'Beta Project', 'User 2'),
+            ];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'alpha';
+            await el.updateComplete;
+            expect(el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)').length).to.equal(1);
+            el.searchQuery = '';
+            await el.updateComplete;
+            expect(el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)').length).to.equal(2);
+        });
+
+        it('should restore full list when query is cleared via change event (sp-search clear affordance)', async () => {
+            const mockProjects = [
+                createMockTranslationProject('1', 'Alpha Project', 'User 1'),
+                createMockTranslationProject('2', 'Beta Project', 'User 2'),
+            ];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'alpha';
+            await el.updateComplete;
+            const search = el.shadowRoot.querySelector('sp-search');
+            search.value = '';
+            search.dispatchEvent(new Event('change'));
+            await el.updateComplete;
+            expect(el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)').length).to.equal(2);
+        });
+
+        it('should render empty-state row and zero project rows for non-matching query', async () => {
+            const mockProjects = [
+                createMockTranslationProject('1', 'Alpha Project', 'User 1'),
+                createMockTranslationProject('2', 'Beta Project', 'User 2'),
+            ];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'zzzz';
+            await el.updateComplete;
+            const projectRows = el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)');
+            expect(projectRows.length).to.equal(0);
+            const noResultsRow = el.shadowRoot.querySelector('sp-table-row.no-results-row');
+            expect(noResultsRow).to.exist;
+            expect(noResultsRow.textContent).to.include('No matching projects found');
+        });
+
+        it('should still render sp-search and skeleton rows while loading', async () => {
+            Store.translationProjects.list.loading.value = true;
+            Store.translationProjects.list.data.value = [];
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            const search = el.shadowRoot.querySelector('sp-search');
+            expect(search).to.exist;
+            const skeletonRows = el.shadowRoot.querySelectorAll('.skeleton-row');
+            expect(skeletonRows.length).to.equal(5);
+        });
+
+        it('should prevent default on submit event (no form navigation)', async () => {
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            const search = el.shadowRoot.querySelector('sp-search');
+            let defaultPrevented = false;
+            const event = new Event('submit', { cancelable: true });
+            Object.defineProperty(event, 'preventDefault', {
+                value: () => (defaultPrevented = true),
+            });
+            search.dispatchEvent(event);
+            expect(defaultPrevented).to.be.true;
+        });
+
+        it('should not modify Store.translationProjects.search or Store.search when typing', async () => {
+            const beforeTpSearch = Store.translationProjects.search?.get?.() ?? undefined;
+            const beforeGlobalSearch = Store.search?.get?.() ?? undefined;
+            const mockProjects = [createMockTranslationProject('1', 'My Project', 'User 1')];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'my';
+            await el.updateComplete;
+            const afterTpSearch = Store.translationProjects.search?.get?.() ?? undefined;
+            const afterGlobalSearch = Store.search?.get?.() ?? undefined;
+            expect(afterTpSearch).to.deep.equal(beforeTpSearch);
+            expect(afterGlobalSearch).to.deep.equal(beforeGlobalSearch);
+        });
+
+        it('should reset searchQuery to empty string on reconnect', async () => {
+            const mockProjects = [createMockTranslationProject('1', 'My Project', 'User 1')];
+            Store.translationProjects.list.data.value = mockProjects;
+            const container = document.createElement('div');
+            document.body.appendChild(container);
+            const el = document.createElement('mas-translation');
+            container.appendChild(el);
+            await el.updateComplete;
+            el.searchQuery = 'my';
+            await el.updateComplete;
+            container.removeChild(el);
+            container.appendChild(el);
+            await el.updateComplete;
+            expect(el.searchQuery).to.equal('');
+            document.body.removeChild(container);
+        });
+
+        it('should sort filtered rows when sort event fires (AC5: sort on filtered subset)', async () => {
+            const date1 = new Date('2024-01-15').getTime();
+            const date2 = new Date('2024-03-20').getTime();
+            const mockProjects = [
+                createMockTranslationProject('1', 'Alpha DE', 'User 1', date2),
+                createMockTranslationProject('2', 'Beta FR', 'User 2', date1),
+                createMockTranslationProject('3', 'Alpha FR', 'User 3', date1),
+            ];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'alpha';
+            await el.updateComplete;
+            const headerCell = el.shadowRoot.querySelector('sp-table-head-cell.sentOn');
+            headerCell.dispatchEvent(new CustomEvent('sorted', { detail: { sortKey: 'sentOn', sortDirection: 'asc' } }));
+            await el.updateComplete;
+            const rows = el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)');
+            expect(rows.length).to.equal(2);
+            const firstRowTitle = rows[0].querySelector('sp-table-cell').textContent;
+            const secondRowTitle = rows[1].querySelector('sp-table-cell').textContent;
+            // date1 < date2, so Alpha FR (date1) sorts before Alpha DE (date2)
+            expect(firstRowTitle).to.equal('Alpha FR');
+            expect(secondRowTitle).to.equal('Alpha DE');
+        });
+
+        it('should invoke delete action on the correct filtered project (AC5: delete on filtered row)', async () => {
+            const toastEmitStub2 = sinon.stub(Events.toast, 'emit');
+            const deleteFragmentStub2 = sinon.stub().resolves();
+            const originalQS = document.querySelector.bind(document);
+            const qsStub = sinon.stub(document, 'querySelector').callsFake((sel) => {
+                if (sel === 'mas-repository') return { deleteFragment: deleteFragmentStub2 };
+                return originalQS(sel);
+            });
+            try {
+                const mockProjects = [
+                    createMockTranslationProject('alpha-id', 'Alpha Project', 'User A'),
+                    createMockTranslationProject('beta-id', 'Beta Project', 'User B'),
+                ];
+                Store.translationProjects.list.data.value = mockProjects;
+                const el = await fixture(html`<mas-translation></mas-translation>`);
+                await el.updateComplete;
+                el.searchQuery = 'alpha';
+                await el.updateComplete;
+                const rows = el.shadowRoot.querySelectorAll('sp-table-row:not(.skeleton-row):not(.no-results-row)');
+                expect(rows.length).to.equal(1);
+                const menuItems = el.shadowRoot.querySelectorAll('sp-menu-item');
+                const deleteItem = Array.from(menuItems).find((item) => item.textContent.trim().includes('Delete'));
+                deleteItem.click();
+                await el.updateComplete;
+                const dialogWrapper = el.shadowRoot.querySelector('sp-dialog-wrapper');
+                dialogWrapper.dispatchEvent(new CustomEvent('confirm'));
+                await el.updateComplete;
+                await new Promise((resolve) => setTimeout(resolve, 10));
+                expect(deleteFragmentStub2.calledOnce).to.be.true;
+                const deletedProject = deleteFragmentStub2.firstCall.args[0];
+                expect(deletedProject.get().id).to.equal('alpha-id');
+            } finally {
+                toastEmitStub2.restore();
+                qsStub.restore();
+            }
+        });
+
+        it('should navigate to the correct filtered project on edit action (AC5: navigate on filtered row)', async () => {
+            const mockProjects = [
+                createMockTranslationProject('alpha-id', 'Alpha Project', 'User A'),
+                createMockTranslationProject('beta-id', 'Beta Project', 'User B'),
+            ];
+            Store.translationProjects.list.data.value = mockProjects;
+            const el = await fixture(html`<mas-translation></mas-translation>`);
+            await el.updateComplete;
+            el.searchQuery = 'beta';
+            await el.updateComplete;
+            const menuItems = el.shadowRoot.querySelectorAll('sp-menu-item');
+            const editItem = Array.from(menuItems).find((item) => item.textContent.trim().includes('Edit'));
+            editItem.click();
+            await el.updateComplete;
+            expect(Store.page.get()).to.equal(PAGE_NAMES.TRANSLATION_EDITOR);
+            expect(Store.translationProjects.inEdit.get().get().id).to.equal('beta-id');
+            expect(Store.translationProjects.translationProjectId.get()).to.equal('beta-id');
         });
     });
 });

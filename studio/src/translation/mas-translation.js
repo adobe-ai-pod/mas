@@ -22,6 +22,7 @@ class MasTranslation extends LitElement {
         isDialogOpen: { type: Boolean, state: true },
         confirmDialogConfig: { type: Object, state: true },
         columns: { type: Set, state: true },
+        searchQuery: { type: String, state: true },
     };
 
     constructor() {
@@ -32,6 +33,7 @@ class MasTranslation extends LitElement {
         ]);
         this.isDialogOpen = false;
         this.confirmDialogConfig = null;
+        this.searchQuery = '';
         this.columns = new Set([
             { key: 'title', label: 'Translation Project' },
             { key: 'status', label: 'Status' },
@@ -110,60 +112,87 @@ class MasTranslation extends LitElement {
             </sp-table>`;
         }
         if (this.translationProjectsData.length) {
+            const projects = this.filteredProjects;
+            const tableBody =
+                projects.length === 0
+                    ? html`<sp-table-row class="no-results-row">
+                          <sp-table-cell colspan="5">No matching projects found.</sp-table-cell>
+                      </sp-table-row>`
+                    : repeat(
+                          projects,
+                          (translationProject) => translationProject.get().id,
+                          (translationProject) => html`
+                              <sp-table-row
+                                  @dblclick=${() => this.#goToEditorExistingProject(translationProject)}
+                                  value=${translationProject.get().path}
+                                  data-id=${translationProject.get().id}
+                              >
+                                  <sp-table-cell>${translationProject.get().title}</sp-table-cell>
+                                  <sp-table-cell>${this.#formatProjectStatus(translationProject)}</sp-table-cell>
+                                  <sp-table-cell>${translationProject.get().modified.fullName}</sp-table-cell>
+                                  <sp-table-cell>${this.#formatSubmissionDate(translationProject)}</sp-table-cell>
+                                  <sp-table-cell class="action-cell">
+                                      <sp-action-menu size="m">
+                                          ${html`
+                                              <sp-menu-item @click=${() => this.#goToEditorExistingProject(translationProject)}>
+                                                  <sp-icon-edit slot="icon"></sp-icon-edit>
+                                                  Edit
+                                              </sp-menu-item>
+                                              <sp-menu-item disabled>
+                                                  <sp-icon-duplicate slot="icon"></sp-icon-duplicate>
+                                                  Duplicate
+                                              </sp-menu-item>
+                                              <sp-menu-item disabled>
+                                                  <sp-icon-archive slot="icon"></sp-icon-archive>
+                                                  Archive
+                                              </sp-menu-item>
+                                              <sp-menu-item @click=${() => this.#deleteTranslationProject(translationProject)}>
+                                                  <sp-icon-delete slot="icon"></sp-icon-delete>
+                                                  Delete
+                                              </sp-menu-item>
+                                              <sp-menu-item disabled>
+                                                  <sp-icon-cancel slot="icon"></sp-icon-cancel>
+                                                  Cancel
+                                              </sp-menu-item>
+                                          `}
+                                      </sp-action-menu>
+                                  </sp-table-cell>
+                              </sp-table-row>
+                          `,
+                      );
             return html` <sp-table emphasized .scroller=${true} class="item-table">
                 ${this.translationProjectsTableHead}
-                <sp-table-body>
-                    ${repeat(
-                        this.translationProjectsData,
-                        (translationProject) => translationProject.get().id,
-                        (translationProject) => html`
-                            <sp-table-row
-                                @dblclick=${() => this.#goToEditorExistingProject(translationProject)}
-                                value=${translationProject.get().path}
-                                data-id=${translationProject.get().id}
-                            >
-                                <sp-table-cell>${translationProject.get().title}</sp-table-cell>
-                                <sp-table-cell>${this.#formatProjectStatus(translationProject)}</sp-table-cell>
-                                <sp-table-cell>${translationProject.get().modified.fullName}</sp-table-cell>
-                                <sp-table-cell>${this.#formatSubmissionDate(translationProject)}</sp-table-cell>
-                                <sp-table-cell class="action-cell">
-                                    <sp-action-menu size="m">
-                                        ${html`
-                                            <sp-menu-item @click=${() => this.#goToEditorExistingProject(translationProject)}>
-                                                <sp-icon-edit slot="icon"></sp-icon-edit>
-                                                Edit
-                                            </sp-menu-item>
-                                            <sp-menu-item disabled>
-                                                <sp-icon-duplicate slot="icon"></sp-icon-duplicate>
-                                                Duplicate
-                                            </sp-menu-item>
-                                            <sp-menu-item disabled>
-                                                <sp-icon-archive slot="icon"></sp-icon-archive>
-                                                Archive
-                                            </sp-menu-item>
-                                            <sp-menu-item @click=${() => this.#deleteTranslationProject(translationProject)}>
-                                                <sp-icon-delete slot="icon"></sp-icon-delete>
-                                                Delete
-                                            </sp-menu-item>
-                                            <sp-menu-item disabled>
-                                                <sp-icon-cancel slot="icon"></sp-icon-cancel>
-                                                Cancel
-                                            </sp-menu-item>
-                                        `}
-                                    </sp-action-menu>
-                                </sp-table-cell>
-                            </sp-table-row>
-                        `,
-                    )}
-                </sp-table-body>
+                <sp-table-body>${tableBody}</sp-table-body>
             </sp-table>`;
         } else {
             return html`<div class="translation-empty-state">No translation projects found.</div>`;
         }
     }
 
+    get #normalizedQuery() {
+        return this.searchQuery.trim().toLowerCase();
+    }
+
+    get filteredProjects() {
+        const query = this.#normalizedQuery;
+        if (!query) return this.translationProjectsData;
+        return this.translationProjectsData.filter((project) => {
+            const data = project.get();
+            const title = data.title ?? '';
+            const updatedBy = data.modified?.fullName ?? '';
+            const rawStatus = data.getFieldValue?.('status') ?? null;
+            const status = this.#formatProjectStatus(project);
+            return (
+                title.toLowerCase().includes(query) ||
+                updatedBy.toLowerCase().includes(query) ||
+                (rawStatus !== null && status.toLowerCase().includes(query))
+            );
+        });
+    }
+
     async connectedCallback() {
         super.connectedCallback();
+        this.searchQuery = '';
 
         const currentPage = Store.page.get();
         if (currentPage !== PAGE_NAMES.TRANSLATIONS) {
@@ -303,7 +332,14 @@ class MasTranslation extends LitElement {
                     </sp-button>
                 </div>
                 <div class="translation-toolbar">
-                    <sp-search size="m" placeholder="Search" disabled></sp-search>
+                    <sp-search
+                        size="m"
+                        placeholder="Search projects"
+                        .value=${this.searchQuery}
+                        @input=${(e) => (this.searchQuery = e.target.value)}
+                        @change=${(e) => (this.searchQuery = e.target.value)}
+                        @submit=${(e) => e.preventDefault()}
+                    ></sp-search>
                     <div>${this.translationProjectsData.length} result(s)</div>
                 </div>
                 ${this.confirmDialog}
