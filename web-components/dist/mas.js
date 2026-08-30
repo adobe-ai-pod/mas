@@ -2482,6 +2482,13 @@ merch-card[variant="mini-compare-chart"] merch-mnemonic-list:nth-child(8) {
             padding-inline-start: var(--consonant-merch-spacing-xs);
         }
 
+        :host([variant='mini-compare-chart']) slot[name='icons'] {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+        }
+
         :host([variant='mini-compare-chart'].bullet-list)
             .secure-transaction-label {
             align-self: flex-start;
@@ -3483,6 +3490,13 @@ merch-card .footer-row-cell:nth-child(8) {
             .price-wrapping
             > slot[name='subtitle'] {
             display: block;
+        }
+
+        :host([variant='mini-compare-chart-mweb']) .body > slot[name='icons'] {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
         }
 
         :host([variant='mini-compare-chart-mweb'])
