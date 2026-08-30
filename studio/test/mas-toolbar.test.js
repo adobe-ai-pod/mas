@@ -3,6 +3,20 @@ import sinon from 'sinon';
 import Events from '../src/events.js';
 import '../src/mas-toolbar.js';
 
+describe('MasToolbar – searchAndFilterControls aria-label', () => {
+    it('sp-search has aria-label="Search fragments", label="Search", and placeholder="Search"', async () => {
+        const el = document.createElement('mas-toolbar');
+        document.body.appendChild(el);
+        await el.updateComplete;
+        const search = el.shadowRoot?.querySelector('sp-search');
+        expect(search).to.exist;
+        expect(search.getAttribute('aria-label')).to.equal('Search fragments');
+        expect(search.getAttribute('label')).to.equal('Search');
+        expect(search.getAttribute('placeholder')).to.equal('Search');
+        document.body.removeChild(el);
+    });
+});
+
 describe('MasToolbar – openCreateDialog', () => {
     let el;
     let sandbox;

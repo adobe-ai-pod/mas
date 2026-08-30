@@ -257,6 +257,7 @@ class MasToolbar extends LitElement {
             >
             <sp-search
                 label="Search"
+                aria-label="Search fragments"
                 placeholder="Search"
                 @submit="${this.handleSearchSubmit}"
                 @change=${this.handleChange}
