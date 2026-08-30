@@ -23,8 +23,11 @@ Six gates after a one-time `npm ci` provision:
 - **dist-sync** — rebuild bundle + docs, fail on drift (demo pages load the
   checked-in `dist/mas.js`).
 - **adversary** — independent-model diff review, required by the acom floor.
-- **visual** — screenshots the surfaces the catalog routes the change to; a
-  change nothing can render escalates to a human.
+- **visual** — screenshots the surfaces the catalog routes the change to and
+  has the vision judge grade them. Advisory for now: the verdict, stills and
+  clip land on the run page and in the PR's evidence table (passed or
+  `failed (advisory)`) but never stop the run or block the PR; a change nothing
+  can render is recorded as unverified. See `gates.yaml` to restore the human stop.
 
 No structure gate: test co-location is already enforced by the runner globbing
 plus coverage thresholds.

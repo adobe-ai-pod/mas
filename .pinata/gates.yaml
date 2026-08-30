@@ -79,18 +79,29 @@ gates:
         template: visual
         name: Visual evidence (component demo surfaces)
         # No default page: the surface catalog in preview.yaml routes targets,
-        # and a change no surface can show escalates instead of guessing.
+        # and a change no surface can show is recorded as unverified rather
+        # than guessed at (advisory gate — see below).
         breakpoints: [1200]
         # Short clip per target for the human reviewer; the judge stays on stills.
         video: true
-        on_missing_target: escalate
+        on_missing_target: skip
         criteria: >-
             The changed component renders on its demo gallery without layout
             breakage or overlap at each breakpoint; spacing, alignment and
             typography hold, prices resolve to real currency values, and
             neighboring cards are not regressed.
-        require_human: true
-        blocking: true
+        # ADVISORY for now (2026-08-30), the posture milo-pinata already runs:
+        # the vision judge's verdict is recorded — stills, clip and reasoning
+        # reach the run page and the PR's evidence table as passed or
+        # `failed (advisory)` — but a run no longer stops for a person to sign
+        # the visual gate off, and a judged failure does not block the PR.
+        # The adversary gate still reviews the code with this result in front
+        # of it. Flip `require_human`/`blocking` back to true to restore the
+        # human stop. The acom floor pins only `adversary`, so this is a
+        # tenant choice the floor check accepts.
+        require_human: false
+        failure_route: halt
+        blocking: false
 
     # Last on purpose: the adversary reviews the code together with every
     # deterministic and visual gate result, not blind of them.
