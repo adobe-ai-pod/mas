@@ -86,6 +86,74 @@ describe('MasFragmentTable', () => {
         });
     });
 
+    describe('openFragmentInNewTab', () => {
+        let openStub;
+
+        beforeEach(() => {
+            openStub = sandbox.stub(window, 'open');
+        });
+
+        it('opens a new tab with the fragment editor deep-link URL', async () => {
+            const fragmentStore = createFragmentStore({ id: 'frag-abc' });
+            const el = await fixture(html`<mas-fragment-table .fragmentStore=${fragmentStore}></mas-fragment-table>`);
+            const event = { stopPropagation: sandbox.stub(), preventDefault: sandbox.stub() };
+            el.openFragmentInNewTab(event);
+            expect(openStub.calledOnce).to.be.true;
+            const [url, target, features] = openStub.firstCall.args;
+            expect(url).to.include('page=fragment-editor');
+            expect(url).to.include('fragmentId=frag-abc');
+            expect(target).to.equal('_blank');
+            expect(features).to.include('noopener');
+        });
+
+        it('stops propagation and prevents default', async () => {
+            const fragmentStore = createFragmentStore({ id: 'frag-abc' });
+            const el = await fixture(html`<mas-fragment-table .fragmentStore=${fragmentStore}></mas-fragment-table>`);
+            const event = { stopPropagation: sandbox.stub(), preventDefault: sandbox.stub() };
+            el.openFragmentInNewTab(event);
+            expect(event.stopPropagation.calledOnce).to.be.true;
+            expect(event.preventDefault.calledOnce).to.be.true;
+        });
+
+        it('does not call window.open when fragment id is missing', async () => {
+            const fragmentStore = createFragmentStore({ id: '' });
+            fragmentStore.value.id = '';
+            const el = await fixture(html`<mas-fragment-table .fragmentStore=${fragmentStore}></mas-fragment-table>`);
+            const event = { stopPropagation: sandbox.stub(), preventDefault: sandbox.stub() };
+            el.openFragmentInNewTab(event);
+            expect(openStub.called).to.be.false;
+        });
+
+        it('does not call router.navigateToFragmentEditor', async () => {
+            const fragmentStore = createFragmentStore({ id: 'frag-abc' });
+            const el = await fixture(html`<mas-fragment-table .fragmentStore=${fragmentStore}></mas-fragment-table>`);
+            const routerModule = await import('../src/router.js');
+            const navigateSpy = sandbox.stub(routerModule.default, 'navigateToFragmentEditor');
+            const event = { stopPropagation: sandbox.stub(), preventDefault: sandbox.stub() };
+            el.openFragmentInNewTab(event);
+            expect(navigateSpy.called).to.be.false;
+        });
+
+        it('renders the open-in-new-tab button in the offer-id cell', async () => {
+            const fragmentStore = createFragmentStore({ id: 'frag-abc' });
+            const el = await fixture(html`<mas-fragment-table .fragmentStore=${fragmentStore}></mas-fragment-table>`);
+            await el.updateComplete;
+            const offerIdCell = el.querySelector('sp-table-cell.offer-id');
+            expect(offerIdCell).to.exist;
+            const openButton = offerIdCell.querySelector('.open-in-new-tab');
+            expect(openButton).to.exist;
+            expect(openButton.querySelector('sp-icon-open-in')).to.exist;
+        });
+
+        it('identifier text is not wrapped in an anchor element', async () => {
+            const fragmentStore = createFragmentStore({ id: 'frag-abc' });
+            const el = await fixture(html`<mas-fragment-table .fragmentStore=${fragmentStore}></mas-fragment-table>`);
+            await el.updateComplete;
+            const offerIdCell = el.querySelector('sp-table-cell.offer-id');
+            expect(offerIdCell.querySelector('a')).to.not.exist;
+        });
+    });
+
     describe('handleEditFragment', () => {
         it('stops propagation and calls editFragment', async () => {
             const fragmentStore = createFragmentStore();

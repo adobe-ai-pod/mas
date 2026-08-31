@@ -1,7 +1,11 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import sinon from 'sinon';
 import '../src/mas-fragment-editor.js';
-import MasFragmentEditor, { snapFilterToPathDefault, syncGroupedVariationRegion } from '../src/mas-fragment-editor.js';
+import MasFragmentEditor, {
+    buildFragmentEditorUrl,
+    snapFilterToPathDefault,
+    syncGroupedVariationRegion,
+} from '../src/mas-fragment-editor.js';
 import Store from '../src/store.js';
 import { Fragment } from '../src/aem/fragment.js';
 import generateFragmentStore from '../src/reactivity/source-fragment-store.js';
@@ -1073,6 +1077,32 @@ describe('MasFragmentEditor', () => {
         it('getFragmentEditorUrl returns correct URL', () => {
             const url = el.getFragmentEditorUrl('test-id');
             expect(url).to.equal('#page=fragment-editor&fragmentId=test-id');
+        });
+
+        describe('buildFragmentEditorUrl', () => {
+            it('returns hash URL for a plain id', () => {
+                expect(buildFragmentEditorUrl('abc')).to.equal('#page=fragment-editor&fragmentId=abc');
+            });
+
+            it('appends path when path option is provided', () => {
+                expect(buildFragmentEditorUrl('abc', { path: 'nala' })).to.include('&path=nala');
+            });
+
+            it('returns empty string for falsy id', () => {
+                expect(buildFragmentEditorUrl(undefined)).to.equal('');
+                expect(buildFragmentEditorUrl(null)).to.equal('');
+                expect(buildFragmentEditorUrl('')).to.equal('');
+            });
+
+            it('prefixes origin and pathname when absolute is true', () => {
+                const url = buildFragmentEditorUrl('abc', { absolute: true });
+                expect(url.startsWith(window.location.origin + window.location.pathname)).to.be.true;
+                expect(url).to.include('#page=fragment-editor&fragmentId=abc');
+            });
+
+            it('instance getFragmentEditorUrl returns same value as buildFragmentEditorUrl', () => {
+                expect(el.getFragmentEditorUrl('abc')).to.equal(buildFragmentEditorUrl('abc'));
+            });
         });
 
         it('goToTranslationEditor navigates to translation editor', async () => {

@@ -89,6 +89,30 @@ export function syncGroupedVariationRegion(fragment, parentLocale) {
     return changed;
 }
 
+/**
+ * Single source of truth for the MAS Studio fragment-editor deep-link URL.
+ * Format: <studio origin><studio pathname>#page=fragment-editor&fragmentId=<uuid>[&path=<surface>]
+ * External clients (e.g. the MAS Chrome extension) must use this shape so the URL
+ * cannot diverge from router.navigateToFragmentEditor.
+ *
+ * @param {string} fragmentId - Fragment UUID
+ * @param {{ path?: string, absolute?: boolean }} [options]
+ * @returns {string} The deep-link URL, or empty string for a falsy fragmentId
+ */
+export function buildFragmentEditorUrl(fragmentId, { path, absolute = false } = {}) {
+    if (!fragmentId) return '';
+    const currentParams = new URLSearchParams(window.location.hash.slice(1));
+    const resolvedPath = path ?? currentParams.get('path');
+    let url = `#page=fragment-editor&fragmentId=${fragmentId}`;
+    if (resolvedPath) {
+        url += `&path=${resolvedPath}`;
+    }
+    if (absolute) {
+        url = `${window.location.origin}${window.location.pathname}${url}`;
+    }
+    return url;
+}
+
 export function snapFilterToPathDefault(fragmentPath) {
     const pathLocale = extractLocaleFromPath(fragmentPath);
     if (!pathLocale) return false;
@@ -1403,15 +1427,7 @@ export default class MasFragmentEditor extends LitElement {
     }
 
     getFragmentEditorUrl(fragmentId) {
-        // Preserve the current path parameter from the URL
-        const currentParams = new URLSearchParams(window.location.hash.slice(1));
-        const path = currentParams.get('path');
-
-        let url = `#page=fragment-editor&fragmentId=${fragmentId}`;
-        if (path) {
-            url += `&path=${path}`;
-        }
-        return url;
+        return buildFragmentEditorUrl(fragmentId);
     }
 
     promptDiscardChanges() {

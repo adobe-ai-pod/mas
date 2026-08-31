@@ -8,6 +8,7 @@ import { closePreview, openPreview } from './mas-card-preview.js';
 import { CARD_MODEL_PATH, COLLECTION_MODEL_PATH } from './constants.js';
 import { MasRepository } from './mas-repository.js';
 import router from './router.js';
+import { buildFragmentEditorUrl } from './mas-fragment-editor.js';
 import './mas-variation-dialog.js';
 
 class MasFragmentTable extends LitElement {
@@ -213,6 +214,14 @@ class MasFragmentTable extends LitElement {
         }
     }
 
+    openFragmentInNewTab(event) {
+        event.stopPropagation();
+        event.preventDefault();
+        const id = this.data?.id;
+        if (!id) return;
+        window.open(buildFragmentEditorUrl(id, { absolute: true }), '_blank', 'noopener');
+    }
+
     render() {
         const data = this.fragmentStore.value;
         return html`
@@ -278,6 +287,14 @@ class MasFragmentTable extends LitElement {
                               <sp-icon-copy class="copy-icon"></sp-icon-copy>
                           </button>`
                         : ''}
+                    <button
+                        class="open-in-new-tab clickable"
+                        aria-label="Open fragment in editor in new tab"
+                        title="Open in new tab"
+                        @click=${this.openFragmentInNewTab}
+                    >
+                        <sp-icon-open-in size="s"></sp-icon-open-in>
+                    </button>
                 </sp-table-cell>
                 <sp-table-cell class="offer-type">${this.offerData?.offerType}</sp-table-cell>
                 <sp-table-cell class="last-modified-by">${data.modified?.by}</sp-table-cell>
