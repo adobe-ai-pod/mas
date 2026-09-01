@@ -1,6 +1,7 @@
 import { SELECTOR_MAS_INLINE_PRICE } from './constants.js';
 import { UptLink } from './upt-link.js';
 import { createTag } from './utils.js';
+import { resolveCTAGroupStyles, getCTAGroupClass } from './cta-group.js';
 
 const DEFAULT_BADGE_COLOR = '#000000';
 const DEFAULT_BADGE_BACKGROUND_COLOR = '#F8D904';
@@ -858,13 +859,33 @@ export function processCTAs(
                   (cta) => !TRIAL_ANALYTICS_IDS.has(cta.dataset.analyticsId),
               )
             : allCtaLinks;
-        const ctas = (
-            filteredLinks.length > 0 ? filteredLinks : allCtaLinks
-        ).map((cta) =>
+        const ctaList = filteredLinks.length > 0 ? filteredLinks : allCtaLinks;
+        const ctaTokens = ctaList.map(
+            (cta) => CHECKOUT_STYLE_PATTERN.exec(cta.className)?.[0] ?? '',
+        );
+        const resolvedTokens = resolveCTAGroupStyles(ctaTokens, {
+            groupCTAs: settings?.groupCTAs,
+        });
+        ctaList.forEach((cta, i) => {
+            const original = ctaTokens[i];
+            const resolved = resolvedTokens[i];
+            if (resolved !== original) {
+                if (original) {
+                    cta.className = cta.className.replace(original, resolved);
+                } else {
+                    cta.className = cta.className
+                        ? `${cta.className} ${resolved}`
+                        : resolved;
+                }
+            }
+        });
+        const ctas = ctaList.map((cta) =>
             transformLinkToButton(cta, merchCard, aemFragmentMapping),
         );
 
         footer.textContent = '';
+        const groupClass = getCTAGroupClass(settings?.groupCTAs);
+        if (groupClass) footer.classList.add(groupClass);
         footer.append(...ctas);
         merchCard.append(footer);
 

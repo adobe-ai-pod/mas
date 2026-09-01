@@ -372,6 +372,51 @@ describe('processCTAs', async () => {
         const footer = getFooterElement(merchCard);
         expect(footer.children).to.have.lengthOf(2);
     });
+
+    it('preserves authored styles when groupCTAs is not set', async () => {
+        const fields = {
+            ctas: `<a is="checkout-link" data-wcs-osi="abm" class="accent">Accent</a><a is="checkout-link" data-wcs-osi="abm" class="primary">Primary</a>`,
+        };
+        processCTAs(
+            fields,
+            merchCard,
+            aemFragmentMapping,
+            undefined,
+            undefined,
+        );
+        const footer = getFooterElement(merchCard);
+        expect(footer.children[0].className).to.include('accent');
+        expect(footer.children[1].className).to.include('primary');
+        expect(footer.classList.contains('cta-group')).to.be.false;
+    });
+
+    it('applies groupCTAs: first accent is primary, others become secondary', async () => {
+        const fields = {
+            ctas: `<a is="checkout-link" data-wcs-osi="abm" class="secondary">Secondary</a><a is="checkout-link" data-wcs-osi="abm" class="accent">Accent</a><a is="checkout-link" data-wcs-osi="abm" class="primary">Primary</a>`,
+        };
+        processCTAs(fields, merchCard, aemFragmentMapping, undefined, {
+            groupCTAs: true,
+        });
+        const footer = getFooterElement(merchCard);
+        expect(footer.classList.contains('cta-group')).to.be.true;
+        expect(footer.children).to.have.lengthOf(3);
+        expect(footer.children[0].className).to.include('secondary');
+        expect(footer.children[1].className).to.include('accent');
+        expect(footer.children[2].className).to.include('secondary');
+    });
+
+    it('applies groupCTAs: index 0 becomes primary when none marked', async () => {
+        const fields = {
+            ctas: `<a is="checkout-link" data-wcs-osi="abm" class="secondary">First</a><a is="checkout-link" data-wcs-osi="abm" class="secondary">Second</a>`,
+        };
+        processCTAs(fields, merchCard, aemFragmentMapping, undefined, {
+            groupCTAs: true,
+        });
+        const footer = getFooterElement(merchCard);
+        expect(footer.classList.contains('cta-group')).to.be.true;
+        // index 0 kept as authored (secondary), index 1 also secondary — both present
+        expect(footer.children).to.have.lengthOf(2);
+    });
 });
 
 describe('processSubtitle', () => {
