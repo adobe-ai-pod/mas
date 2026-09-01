@@ -15,6 +15,7 @@ import { PAGE_NAMES, TRANSLATION_PROJECT_MODEL_ID, QUICK_ACTION, TABLE_TYPE, VAR
 import { getItemsSelectionStore, setItemsSelectionStore } from '../common/items-selection-store.js';
 import { renderFragmentStatusCell, getOdinLocTaskNameValidationError } from './translation-utils.js';
 import './mas-collapsible-table-row.js';
+import './mas-translation-duplicate-dialog.js';
 
 class MasTranslationEditor extends LitElement {
     static styles = styles;
@@ -31,6 +32,8 @@ class MasTranslationEditor extends LitElement {
         showLangSelectedEmptyState: { type: Boolean, state: true },
         ioBaseUrl: { type: String, state: true },
         isProjectReadonly: { type: Boolean, state: true },
+        duplicateDialogOpen: { type: Boolean, state: true },
+        duplicateProposedTitle: { type: String, state: true },
     };
 
     #cardsSnapshot = [];
@@ -62,6 +65,8 @@ class MasTranslationEditor extends LitElement {
         this.isSelectedLangsOpen = false;
         this.ioBaseUrl = document.querySelector('meta[name="io-base-url"]')?.content;
         this.isProjectReadonly = false;
+        this.duplicateDialogOpen = false;
+        this.duplicateProposedTitle = '';
     }
 
     async connectedCallback() {
@@ -95,7 +100,7 @@ class MasTranslationEditor extends LitElement {
         if (translationProjectId) {
             await this.#loadTranslationProjectById(translationProjectId);
             this.showLangSelectedEmptyState = this.targetLocalesCount === 0;
-            this.#updateDisabledActions({ remove: [QUICK_ACTION.DELETE, QUICK_ACTION.LOC] });
+            this.#updateDisabledActions({ remove: [QUICK_ACTION.DELETE, QUICK_ACTION.DUPLICATE, QUICK_ACTION.LOC] });
         } else {
             this.#initializeNewTranslationProject(fragmentPath, targetLocale, Boolean(isCollection));
         }
@@ -392,6 +397,65 @@ class MasTranslationEditor extends LitElement {
         }
     }
 
+    #openDuplicateDialog() {
+        const title = this.translationProject?.getFieldValue('title') || this.translationProject?.title || '';
+        this.duplicateProposedTitle = `${title} copy`;
+        this.duplicateDialogOpen = true;
+    }
+
+    #onDuplicateCancelled = () => {
+        this.duplicateDialogOpen = false;
+    };
+
+    #onDuplicateConfirmed = async ({ detail: { title } }) => {
+        this.duplicateDialogOpen = false;
+        const sourceFragment = this.translationProject;
+        if (!sourceFragment) return;
+
+        const typeMap = {
+            title: { type: 'text', multiple: false },
+            status: { type: 'text', multiple: false },
+            fragments: { type: 'content-fragment', multiple: true },
+            placeholders: { type: 'content-fragment', multiple: true },
+            collections: { type: 'content-fragment', multiple: true },
+            targetLocales: { type: 'text', multiple: true },
+            submissionDate: { type: 'date-time', multiple: false },
+            projectType: { type: 'enumeration', multiple: false },
+        };
+
+        const fields = sourceFragment.fields
+            .filter((field) => field.name !== 'submissionDate')
+            .map((field) => ({
+                name: field.name,
+                type: typeMap[field.name]?.type ?? field.type,
+                multiple: typeMap[field.name]?.multiple ?? field.multiple ?? false,
+                values: field.name === 'title' ? [title] : [...(field.values ?? [])],
+            }));
+
+        const fragmentPayload = {
+            name: normalizeKey(title),
+            parentPath: this.repository.getTranslationsPath(),
+            modelId: TRANSLATION_PROJECT_MODEL_ID,
+            title,
+            fields,
+        };
+
+        showToast('Duplicating project...');
+        try {
+            this.isLoading = true;
+            const newProject = await this.repository.createFragment(fragmentPayload, false);
+            if (newProject) {
+                showToast('Translation project duplicated successfully.', 'positive');
+                router.navigateToPage(PAGE_NAMES.TRANSLATIONS)();
+            }
+        } catch (error) {
+            console.error('Error duplicating translation project:', error);
+            showToast('Failed to duplicate translation project.', 'negative');
+        } finally {
+            this.isLoading = false;
+        }
+    };
+
     async #discardUnsavedChanges() {
         if (this.translationProject?.hasChanges || this.selectedCount > 0 || this.targetLocalesCount > 0) {
             const confirmed = await this.#showDialog(
@@ -662,6 +726,12 @@ class MasTranslationEditor extends LitElement {
         }
         return html`
             ${this.renderConfirmDialog()}
+            <mas-translation-duplicate-dialog
+                .proposedTitle=${this.duplicateProposedTitle}
+                .open=${this.duplicateDialogOpen}
+                @duplicate-confirmed=${this.#onDuplicateConfirmed}
+                @duplicate-cancelled=${this.#onDuplicateCancelled}
+            ></mas-translation-duplicate-dialog>
 
             <div class="translation-editor-form">
                 ${this.isProjectReadonly
@@ -866,6 +936,7 @@ class MasTranslationEditor extends LitElement {
                     .disabled=${this.disabledActions}
                     @save=${this.isNewTranslationProject ? this.#createTranslationProject : this.#updateTranslationProject}
                     @delete=${this.#deleteTranslationProject}
+                    @duplicate=${this.#openDuplicateDialog}
                     @discard=${this.#discardUnsavedChanges}
                     @loc=${this.#sendTranslationProject}
                 ></mas-quick-actions>
