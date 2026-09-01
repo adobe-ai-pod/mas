@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Headless Templates (Marquee, FAQ, Promo Bar) demo page</title>
+        <script>
+            window.process = {
+                env: {},
+            };
+        </script>
+        <style>
+            main {
+                display: flex;
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 32px;
+                padding: 40px;
+            }
+            section {
+                width: 100%;
+            }
+            h2 {
+                font-family: sans-serif;
+                margin-bottom: 8px;
+            }
+        </style>
+        <script type="module" src="./headless-templates.test.html.js"></script>
+    </head>
+
+    <body>
+        <mas-commerce-service
+            env="stage"
+            mas-io-url="https://www.stage.adobe.com/mas/io"
+        ></mas-commerce-service>
+        <main>
+            <section id="marquee-section">
+                <h2>MARQUEE</h2>
+                <merch-card
+                    id="card-headless-marquee"
+                    variant="headless-marquee"
+                >
+                    <p slot="heading-xs">Adobe Photoshop</p>
+                    <div slot="body-xs">
+                        <p>
+                            The world's best imaging and graphic design
+                            software.
+                        </p>
+                    </div>
+                    <p slot="short-description">Professional photo editing.</p>
+                    <p slot="prices">
+                        <span
+                            is="inline-price"
+                            data-template="price"
+                            data-wcs-osi="abc123"
+                        ></span>
+                    </p>
+                    <div slot="footer">
+                        <button
+                            is="checkout-link"
+                            class="spectrum-Button spectrum-Button--primary spectrum-Button--sizeM"
+                        >
+                            <span class="spectrum-Button-label">Buy now</span>
+                        </button>
+                    </div>
+                </merch-card>
+            </section>
+
+            <section id="faq-section">
+                <h2>FAQ</h2>
+                <merch-card id="card-headless-faq" variant="headless-faq">
+                    <p slot="prices">
+                        <span
+                            is="inline-price"
+                            data-template="price"
+                            data-wcs-osi="abc123"
+                        ></span>
+                    </p>
+                    <div slot="body-xs">
+                        <p>Photoshop is available on Windows and macOS.</p>
+                    </div>
+                    <p slot="short-description">
+                        You can cancel your subscription at any time.
+                    </p>
+                    <div slot="callout-content">
+                        <p>
+                            Student and teacher editions are available at a
+                            discount.
+                        </p>
+                    </div>
+                </merch-card>
+            </section>
+
+            <section id="promo-bar-section">
+                <h2>PROMO BAR</h2>
+                <merch-card
+                    id="card-headless-promo-bar"
+                    variant="headless-promo-bar"
+                >
+                    <div slot="body-xs">
+                        <p>Save 50% on Photoshop for the first 3 months.</p>
+                    </div>
+                    <div slot="footer">
+                        <button
+                            is="checkout-link"
+                            class="spectrum-Button spectrum-Button--primary spectrum-Button--sizeM"
+                        >
+                            <span class="spectrum-Button-label"
+                                >Get the deal</span
+                            >
+                        </button>
+                    </div>
+                </merch-card>
+            </section>
+        </main>
+    </body>
+</html>
