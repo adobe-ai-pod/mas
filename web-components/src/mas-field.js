@@ -6,6 +6,7 @@ import {
 } from './constants.js';
 import { getService, shouldHideStPriceLabels } from './utils.js';
 import { COMPAT_VERSION_GLOBAL_PROMO_CODE } from './compat-version.js';
+import { resolveCTAGroupStyles, getCTAGroupClass } from './cta-group.js';
 
 const MAS_FIELD_TAG = 'mas-field';
 const CHECKOUT_STYLE_PATTERN = /(accent|primary|secondary)(-(outline|link))?/;
@@ -340,8 +341,30 @@ class MasField extends HTMLElement {
         const doc = new DOMParser().parseFromString(html, 'text/html');
         const links = [...doc.body.querySelectorAll('a')];
         if (!links.length) return null;
+        const settings = this.aemFragment?.data?.settings;
+        const ctaTokens = links.map(
+            (link) => CHECKOUT_STYLE_PATTERN.exec(link.className)?.[0] ?? '',
+        );
+        const resolvedTokens = resolveCTAGroupStyles(ctaTokens, {
+            groupCTAs: settings?.groupCTAs,
+        });
+        links.forEach((link, i) => {
+            const original = ctaTokens[i];
+            const resolved = resolvedTokens[i];
+            if (resolved !== original) {
+                if (original) {
+                    link.className = link.className.replace(original, resolved);
+                } else {
+                    link.className = link.className
+                        ? `${link.className} ${resolved}`
+                        : resolved;
+                }
+            }
+        });
         const footer = document.createElement('div');
         footer.setAttribute('slot', 'footer');
+        const groupClass = getCTAGroupClass(settings?.groupCTAs);
+        if (groupClass) footer.classList.add(groupClass);
         footer.append(...links.map((link) => this.#buildCtaButton(link)));
         return footer;
     }

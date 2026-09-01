@@ -819,6 +819,73 @@ describe('mas-field – price options provider (locale defaults)', () => {
     });
 });
 
+describe('mas-field – groupCTAs', () => {
+    afterEach(() => {
+        document.body
+            .querySelectorAll('mas-field')
+            .forEach((el) => el.remove());
+    });
+
+    function makeCtaFieldWithSettings(ctasHtml, settings) {
+        const el = document.createElement('mas-field');
+        el.setAttribute('field', 'ctas');
+        const fragment = document.createElement('aem-fragment');
+        el.append(fragment);
+        document.body.append(el);
+        fragment.data = { settings };
+        fragment.dispatchEvent(
+            new CustomEvent('aem:load', {
+                bubbles: true,
+                detail: { fields: { ctas: ctasHtml } },
+            }),
+        );
+        return el;
+    }
+
+    it('preserves authored styles when groupCTAs is absent', () => {
+        const el = makeCtaFieldWithSettings(
+            '<a data-wcs-osi="A" class="accent">Buy</a><a data-wcs-osi="B" class="primary">Try</a>',
+            undefined,
+        );
+        const links = el.querySelectorAll('[slot="footer"] a');
+        expect(links.length).to.equal(2);
+        expect(links[0].classList.contains('blue')).to.be.true;
+        expect(links[1].classList.contains('fill')).to.be.true;
+        expect(
+            el.querySelector('[slot="footer"]').classList.contains('cta-group'),
+        ).to.be.false;
+    });
+
+    it('applies groupCTAs: first accent stays primary, others become secondary', () => {
+        const el = makeCtaFieldWithSettings(
+            '<a data-wcs-osi="A" class="secondary">First</a><a data-wcs-osi="B" class="accent">Second</a><a data-wcs-osi="C" class="primary">Third</a>',
+            { groupCTAs: true },
+        );
+        const footer = el.querySelector('[slot="footer"]');
+        expect(footer.classList.contains('cta-group')).to.be.true;
+        const links = footer.querySelectorAll('a');
+        expect(links.length).to.equal(3);
+        // index 0 was 'secondary' → demoted (stays secondary)
+        expect(links[0].classList.contains('con-button')).to.be.true;
+        // index 1 was 'accent' → primary (blue)
+        expect(links[1].classList.contains('blue')).to.be.true;
+        // index 2 was 'primary' → demoted to secondary
+        expect(links[2].classList.contains('blue')).to.be.false;
+        expect(links[2].classList.contains('fill')).to.be.false;
+    });
+
+    it('positional fallback: index 0 kept as primary when none is accent/primary', () => {
+        const el = makeCtaFieldWithSettings(
+            '<a data-wcs-osi="A" class="secondary">First</a><a data-wcs-osi="B" class="secondary-link">Second</a>',
+            { groupCTAs: true },
+        );
+        const footer = el.querySelector('[slot="footer"]');
+        expect(footer.classList.contains('cta-group')).to.be.true;
+        const links = footer.querySelectorAll('a');
+        expect(links.length).to.equal(2);
+    });
+});
+
 describe('mas-field – mas:ready event', () => {
     afterEach(() => {
         document.body
