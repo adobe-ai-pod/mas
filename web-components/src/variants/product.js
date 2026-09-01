@@ -171,7 +171,11 @@ export class Product extends VariantLayout {
         const span = document.createElement('span');
         span.className = 'merch-short-description';
         const inner = shortDescEl.querySelector('p') ?? shortDescEl;
-        span.innerHTML = inner.innerHTML;
+        const source = inner.cloneNode(true);
+        source
+            .querySelectorAll('[slot="promo-text"]')
+            .forEach((el) => el.remove());
+        span.innerHTML = source.innerHTML;
         span.querySelectorAll('.icon-button').forEach((btn) => {
             if (btn.dataset.eventsWired) return;
             btn.dataset.eventsWired = '1';

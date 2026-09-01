@@ -1,5 +1,6 @@
 import { expect } from '@esm-bundle/chai';
 import '../src/mas.js';
+import { CSS } from '../src/variants/product.css.js';
 
 let Product;
 
@@ -129,6 +130,19 @@ describe('Product.adjustShortDescription', () => {
         btn.dispatchEvent(new Event('mouseenter'));
         expect(btn.classList.contains('tooltip-visible')).to.be.true;
     });
+
+    it('excludes nested promo-text markup from the injected span', () => {
+        const shortDesc = document.createElement('div');
+        shortDesc.innerHTML =
+            '<p>Annual subscription <span slot="promo-text">Green promo text</span></p>';
+        const legal = document.createElement('span');
+        const { layout, container } = makeContainer({ shortDesc, legal });
+        layout.adjustShortDescription();
+        const span = container.querySelector('.merch-short-description');
+        expect(span).to.exist;
+        expect(span.textContent).to.include('Annual subscription');
+        expect(span.textContent).to.not.include('Green promo text');
+    });
 });
 
 // ── Product.adjustLegal ───────────────────────────────────────────────────────
@@ -196,5 +210,54 @@ describe('Product.renderLayout', () => {
         const result = makeLayout({ promoBottom: true }).renderLayout();
         const str = JSON.stringify(result);
         expect(str).to.include('promo-text');
+    });
+});
+
+// ── product variant short-description styling ─────────────────────────────────
+
+describe('product variant short-description styling', () => {
+    function getRuleBody(css, selector) {
+        const idx = css.indexOf(selector);
+        if (idx === -1) return '';
+        const start = css.indexOf('{', idx);
+        const end = css.indexOf('}', start);
+        return css.slice(start, end + 1);
+    }
+
+    it('.merch-short-description uses body-xs font-size token', () => {
+        const rule = getRuleBody(
+            CSS,
+            'merch-card[variant="product"] .merch-short-description {',
+        );
+        expect(rule).to.include(
+            'var(--consonant-merch-card-body-xs-font-size)',
+        );
+    });
+
+    it('.merch-short-description uses body-xs line-height token', () => {
+        const rule = getRuleBody(
+            CSS,
+            'merch-card[variant="product"] .merch-short-description {',
+        );
+        expect(rule).to.include(
+            'var(--consonant-merch-card-body-xs-line-height)',
+        );
+    });
+
+    it('.merch-short-description is not italic', () => {
+        const rule = getRuleBody(
+            CSS,
+            'merch-card[variant="product"] .merch-short-description {',
+        );
+        expect(rule).to.include('font-style: normal');
+        expect(rule).to.not.include('font-style: italic');
+    });
+
+    it('span[data-template="legal"] rule still has italic treatment', () => {
+        const rule = getRuleBody(
+            CSS,
+            'merch-card[variant="product"][id] span[data-template="legal"]',
+        );
+        expect(rule).to.include('font-style: italic');
     });
 });
