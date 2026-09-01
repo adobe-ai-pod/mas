@@ -39,6 +39,10 @@ import {
     COMPARE_CHART_COLUMN_AEM_FRAGMENT_MAPPING,
 } from './compare-chart-column.js';
 import { FriesCard, FRIES_AEM_FRAGMENT_MAPPING } from './fries.js';
+import {
+    BrandConcierge,
+    BRAND_CONCIERGE_AEM_FRAGMENT_MAPPING,
+} from './brand-concierge.js';
 
 // Registry for dynamic variants
 const variantRegistry = new Map();
@@ -172,6 +176,12 @@ registerVariant(
     FriesCard,
     FRIES_AEM_FRAGMENT_MAPPING,
     FriesCard.variantStyle,
+);
+registerVariant(
+    'brand-concierge',
+    BrandConcierge,
+    BRAND_CONCIERGE_AEM_FRAGMENT_MAPPING,
+    BrandConcierge.variantStyle,
 );
 
 const applyStyleSheet = (card, style, state) => {

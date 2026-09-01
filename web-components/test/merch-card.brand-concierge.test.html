@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>
+            Merch Card Brand Concierge Variant Web Component demo page
+        </title>
+        <script>
+            window.process = {
+                env: {},
+            };
+        </script>
+        <style>
+            #wide-wrapper {
+                width: 1000px;
+            }
+            #narrow-wrapper {
+                width: 300px;
+            }
+        </style>
+        <mas-commerce-service env="stage"></mas-commerce-service>
+    </head>
+
+    <body>
+        <script
+            type="module"
+            src="./merch-card.brand-concierge.test.html.js"
+        ></script>
+        <div id="wide-wrapper">
+            <merch-card id="brand-concierge-wide" variant="brand-concierge">
+                <h3 slot="heading-xxs">Creative Cloud All Apps</h3>
+                <div slot="body-s">
+                    <p>Get all your creative apps in one plan.</p>
+                </div>
+                <div slot="cta">
+                    <button
+                        is="checkout-button"
+                        class="spectrum-Button spectrum-Button--primary spectrum-Button--sizeM"
+                    >
+                        <span class="spectrum-Button-label">Buy now</span>
+                    </button>
+                </div>
+            </merch-card>
+        </div>
+        <div id="narrow-wrapper">
+            <merch-card id="brand-concierge-narrow" variant="brand-concierge">
+                <h3 slot="heading-xxs">Photoshop</h3>
+                <div slot="body-s">
+                    <p>Create stunning images.</p>
+                </div>
+                <div slot="cta">
+                    <button
+                        is="checkout-button"
+                        class="spectrum-Button spectrum-Button--primary spectrum-Button--sizeM"
+                    >
+                        <span class="spectrum-Button-label">Buy now</span>
+                    </button>
+                </div>
+            </merch-card>
+        </div>
+    </body>
+</html>
