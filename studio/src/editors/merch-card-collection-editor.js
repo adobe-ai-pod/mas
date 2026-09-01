@@ -11,6 +11,7 @@ import generateFragmentStore from '../reactivity/source-fragment-store.js';
 import ReactiveController from '../reactivity/reactive-controller.js';
 import { parseStudioDeepLinksFromText, showToast } from '../utils.js';
 import { applyCorrectorToFragment } from '../utils/corrector-helper.js';
+import { openFragmentEditorInNewTab } from '../utils/open-in-new-tab.js';
 import { renderSpIcon } from '../constants/icon-library.js';
 import '../fields/mnemonic-field.js';
 
@@ -635,6 +636,18 @@ class MerchCardCollectionEditor extends LitElement {
                               @mouseover="${(e) => this.showItemPreview(e, fragment)}"
                               @mouseout="${() => this.hideItemPreview()}"
                           ></sp-icon-preview>
+                          <sp-action-button
+                              quiet
+                              variant="secondary"
+                              label="Open in new tab"
+                              @click="${(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  openFragmentEditorInNewTab(fragment.id);
+                              }}"
+                          >
+                              <sp-icon-open-in slot="icon" label="Open in new tab"></sp-icon-open-in>
+                          </sp-action-button>
                       `
                     : nothing}
                 <sp-icon-order size="m" label="Order"></sp-icon-order>
