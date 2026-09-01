@@ -481,10 +481,9 @@ class MasSearchAndFilters extends LitElement {
         this.#addCachedFilterOptions(optionMaps);
 
         const toSortedOptions = (map) => Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title));
-        this.templateOptions = VARIANTS.filter((variant) => variant.label.toLowerCase() !== 'all').map((variant) => ({
-            id: variant.value,
-            title: variant.label,
-        }));
+        this.templateOptions = VARIANTS.filter((variant) => variant.label.toLowerCase() !== 'all')
+            .map((variant) => ({ id: variant.value, title: variant.label }))
+            .sort((a, b) => a.title.localeCompare(b.title));
         this.marketSegmentOptions = toSortedOptions(optionMaps.marketSegments);
         this.customerSegmentOptions = toSortedOptions(optionMaps.customerSegments);
         this.productOptions = toSortedOptions(optionMaps.products);
