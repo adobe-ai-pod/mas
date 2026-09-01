@@ -7,6 +7,7 @@ import { setItemsSelectionStore } from '../../src/common/items-selection-store.j
 import { FILTER_TYPE, PAGE_NAMES } from '../../src/constants.js';
 import { stubAemTagQueryFetch } from '../helpers/aem-tag-fetch.js';
 import { resetTagCache, seedTagCache } from '../helpers/tag-cache.js';
+import { VARIANTS } from '../../src/editors/variant-picker.js';
 import '../../src/swc.js';
 import '../../src/common/components/mas-search-and-filters.js';
 
@@ -1473,6 +1474,23 @@ describe('MasSearchAndFilters', () => {
                 expect(opt).to.have.property('id');
                 expect(opt).to.have.property('title');
             });
+        });
+
+        it('templateOptions are sorted alphabetically and exclude "All"', async () => {
+            Store.translationProjects.allCards.set([createMockFragment()]);
+            const el = await fixture(html`<mas-search-and-filters type="cards" .searchOnly=${false}></mas-search-and-filters>`);
+            await el.updateComplete;
+
+            const titles = el.templateOptions.map((o) => o.title);
+            const sorted = [...titles].sort((a, b) => a.localeCompare(b));
+
+            expect(titles).to.deep.equal(sorted);
+            expect(titles[0]).to.equal('Catalog');
+            expect(titles[titles.length - 1]).to.equal('Try Buy Widget');
+            expect(titles.map((t) => t.toLowerCase())).to.not.include('all');
+
+            const expectedCount = VARIANTS.filter((v) => v.label.toLowerCase() !== 'all').length;
+            expect(titles.length).to.equal(expectedCount);
         });
     });
 
