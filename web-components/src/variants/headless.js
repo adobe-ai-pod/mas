@@ -33,7 +33,7 @@ export const HEADLESS_AEM_FRAGMENT_MAPPING = {
  * Only includes fields that are authorable in the merch-card editor to avoid confusion.
  * Labels match the editor (merch-card-editor.js). Order defines render order.
  */
-const HEADLESS_FIELDS = [
+export const HEADLESS_FIELDS = [
     { slot: 'bg-image', label: 'Background Image' },
     { slot: 'badge', label: 'Badge' },
     { slot: 'icons', label: 'Mnemonic icon' },
@@ -52,6 +52,20 @@ const HEADLESS_FIELDS = [
     { slot: 'footer', label: 'CTAs' },
 ];
 
+/** Renders a label+value table for the given fields list. Shared by all headless subclasses. */
+export function renderHeadlessFields(fields) {
+    return fields.map(
+        ({ slot, label }) => html`
+            <div class="headless-row">
+                <span class="headless-label">${label}</span>
+                <span class="headless-value">
+                    <slot name="${slot}"></slot>
+                </span>
+            </div>
+        `,
+    );
+}
+
 export class Headless extends VariantLayout {
     constructor(card) {
         super(card);
@@ -64,16 +78,7 @@ export class Headless extends VariantLayout {
     renderLayout() {
         return html`
             <div class="headless">
-                ${HEADLESS_FIELDS.map(
-                    ({ slot, label }) => html`
-                        <div class="headless-row">
-                            <span class="headless-label">${label}</span>
-                            <span class="headless-value">
-                                <slot name="${slot}"></slot>
-                            </span>
-                        </div>
-                    `,
-                )}
+                ${renderHeadlessFields(HEADLESS_FIELDS)}
                 ${this.card.secureLabel
                     ? html`
                           <div class="headless-row">

@@ -426,3 +426,43 @@ The `sp-action-button` custom element renders into the default slot as no explic
         );
 </script>
 ```
+
+## Headless Templates
+
+Headless templates render content as a borderless label/value table — no card border, background or box-shadow. They are designed for Document Authoring and custom rendering frameworks.
+
+### MARQUEE
+
+```html {.demo .light}
+<merch-card variant="headless-marquee">
+    <p slot="heading-xs">Adobe Photoshop</p>
+    <div slot="body-xs"><p>The world's best imaging and graphic design software.</p></div>
+    <p slot="short-description">Professional photo editing.</p>
+    <p slot="prices"><span is="inline-price" data-template="price" data-wcs-osi="r_JXAnlFI7xD6FxWKl2ODvZriLYBoSL701Kd1hRyhe8"></span></p>
+    <div slot="footer">
+        <a is="checkout-link" href="#" class="con-button blue active" data-wcs-osi="r_JXAnlFI7xD6FxWKl2ODvZriLYBoSL701Kd1hRyhe8">Buy now</a>
+    </div>
+</merch-card>
+```
+
+### FAQ
+
+```html {.demo .light}
+<merch-card variant="headless-faq">
+    <p slot="prices"><span is="inline-price" data-template="price" data-wcs-osi="r_JXAnlFI7xD6FxWKl2ODvZriLYBoSL701Kd1hRyhe8"></span></p>
+    <div slot="body-xs"><p>Photoshop is available on Windows and macOS.</p></div>
+    <p slot="short-description">You can cancel your subscription at any time.</p>
+    <div slot="callout-content"><p>Student and teacher editions are available at a discount.</p></div>
+</merch-card>
+```
+
+### PROMO BAR
+
+```html {.demo .light}
+<merch-card variant="headless-promo-bar">
+    <div slot="body-xs"><p>Save 50% on Photoshop for the first 3 months.</p></div>
+    <div slot="footer">
+        <a is="checkout-link" href="#" class="con-button blue active" data-wcs-osi="r_JXAnlFI7xD6FxWKl2ODvZriLYBoSL701Kd1hRyhe8">Get the deal</a>
+    </div>
+</merch-card>
+```

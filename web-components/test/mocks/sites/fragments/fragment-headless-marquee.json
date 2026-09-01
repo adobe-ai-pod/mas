@@ -1,0 +1,28 @@
+{
+    "path": "/content/dam/mas/nala/headless/marquee-photoshop",
+    "name": "marquee-photoshop",
+    "title": "Marquee Photoshop Headless",
+    "id": "fragment-headless-marquee",
+    "description": "",
+    "model": { "id": "L2NvbmYvbWFzL3NldHRpbmdzL2RhbS9jZm0vbW9kZWxzL2NhcmQ" },
+    "settings": {},
+    "fields": {
+        "variant": "headless-marquee",
+        "title": {
+            "value": "Adobe Photoshop",
+            "mimeType": "text/plain"
+        },
+        "description": {
+            "value": "<p>The world's best imaging and graphic design software.</p>",
+            "mimeType": "text/html"
+        },
+        "shortDescription": {
+            "value": "<p>Professional photo editing.</p>",
+            "mimeType": "text/html"
+        },
+        "prices": {
+            "value": "<span is=\"inline-price\" data-template=\"price\" data-wcs-osi=\"abc123\"></span>",
+            "mimeType": "text/html"
+        }
+    }
+}

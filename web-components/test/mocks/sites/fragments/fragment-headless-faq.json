@@ -1,0 +1,28 @@
+{
+    "path": "/content/dam/mas/nala/headless/faq-photoshop",
+    "name": "faq-photoshop",
+    "title": "FAQ Photoshop Headless",
+    "id": "fragment-headless-faq",
+    "description": "",
+    "model": { "id": "L2NvbmYvbWFzL3NldHRpbmdzL2RhbS9jZm0vbW9kZWxzL2NhcmQ" },
+    "settings": {},
+    "fields": {
+        "variant": "headless-faq",
+        "prices": {
+            "value": "<span is=\"inline-price\" data-template=\"price\" data-wcs-osi=\"abc123\"></span>",
+            "mimeType": "text/html"
+        },
+        "description": {
+            "value": "<p>Photoshop is available on Windows and macOS.</p>",
+            "mimeType": "text/html"
+        },
+        "shortDescription": {
+            "value": "<p>You can cancel your subscription at any time.</p>",
+            "mimeType": "text/html"
+        },
+        "callout": {
+            "value": "<p>Student and teacher editions are available at a discount.</p>",
+            "mimeType": "text/html"
+        }
+    }
+}

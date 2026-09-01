@@ -1,0 +1,16 @@
+{
+    "path": "/content/dam/mas/nala/headless/promo-bar-photoshop",
+    "name": "promo-bar-photoshop",
+    "title": "Promo Bar Photoshop Headless",
+    "id": "fragment-headless-promo-bar",
+    "description": "",
+    "model": { "id": "L2NvbmYvbWFzL3NldHRpbmdzL2RhbS9jZm0vbW9kZWxzL2NhcmQ" },
+    "settings": {},
+    "fields": {
+        "variant": "headless-promo-bar",
+        "description": {
+            "value": "<p>Save 50% on Photoshop for the first 3 months.</p>",
+            "mimeType": "text/html"
+        }
+    }
+}
