@@ -247,14 +247,14 @@ describe('MasTranslation', () => {
             expect(deleteItem).to.exist;
         });
 
-        it('should have disabled Duplicate menu item', async () => {
+        it('should have enabled Duplicate menu item', async () => {
             const mockProjects = [createMockTranslationProject('1', 'Project 1')];
             Store.translationProjects.list.data.value = mockProjects;
             const el = await fixture(html`<mas-translation></mas-translation>`);
             const menuItems = el.shadowRoot.querySelectorAll('sp-menu-item');
             const duplicateItem = Array.from(menuItems).find((item) => item.textContent.trim().includes('Duplicate'));
             expect(duplicateItem).to.exist;
-            expect(duplicateItem.disabled).to.be.true;
+            expect(duplicateItem.disabled).to.be.false;
         });
     });
 

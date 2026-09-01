@@ -4,8 +4,10 @@ import { styles } from './mas-translation.css.js';
 import router from '../router.js';
 import Store from '../store.js';
 import ReactiveController from '../reactivity/reactive-controller.js';
-import { PAGE_NAMES } from '../constants.js';
-import { showToast } from '../utils.js';
+import { FragmentStore } from '../reactivity/fragment-store.js';
+import { PAGE_NAMES, TRANSLATION_PROJECT_MODEL_ID } from '../constants.js';
+import { normalizeKey, showToast } from '../utils.js';
+import './mas-translation-duplicate-dialog.js';
 
 const translationSkeletonRow = () =>
     html`<sp-table-row class="skeleton-row">
@@ -18,10 +20,14 @@ const translationSkeletonRow = () =>
 class MasTranslation extends LitElement {
     static styles = styles;
 
+    #duplicateSourceProject = null;
+
     static properties = {
         isDialogOpen: { type: Boolean, state: true },
         confirmDialogConfig: { type: Object, state: true },
         columns: { type: Set, state: true },
+        duplicateDialogOpen: { type: Boolean, state: true },
+        duplicateProposedTitle: { type: String, state: true },
     };
 
     constructor() {
@@ -32,6 +38,8 @@ class MasTranslation extends LitElement {
         ]);
         this.isDialogOpen = false;
         this.confirmDialogConfig = null;
+        this.duplicateDialogOpen = false;
+        this.duplicateProposedTitle = '';
         this.columns = new Set([
             { key: 'title', label: 'Translation Project' },
             { key: 'status', label: 'Status' },
@@ -133,7 +141,7 @@ class MasTranslation extends LitElement {
                                                 <sp-icon-edit slot="icon"></sp-icon-edit>
                                                 Edit
                                             </sp-menu-item>
-                                            <sp-menu-item disabled>
+                                            <sp-menu-item @click=${() => this.#openDuplicateDialog(translationProject)}>
                                                 <sp-icon-duplicate slot="icon"></sp-icon-duplicate>
                                                 Duplicate
                                             </sp-menu-item>
@@ -250,6 +258,69 @@ class MasTranslation extends LitElement {
         }
     }
 
+    #openDuplicateDialog(translationProject) {
+        this.#duplicateSourceProject = translationProject;
+        this.duplicateProposedTitle = `${translationProject.get().getFieldValue('title') || translationProject.get().title} copy`;
+        this.duplicateDialogOpen = true;
+    }
+
+    #onDuplicateCancelled = () => {
+        this.duplicateDialogOpen = false;
+        this.#duplicateSourceProject = null;
+    };
+
+    #onDuplicateConfirmed = async ({ detail: { title } }) => {
+        this.duplicateDialogOpen = false;
+        const source = this.#duplicateSourceProject;
+        this.#duplicateSourceProject = null;
+        if (!source) return;
+
+        const sourceFragment = source.get();
+        const typeMap = {
+            title: { type: 'text', multiple: false },
+            status: { type: 'text', multiple: false },
+            fragments: { type: 'content-fragment', multiple: true },
+            placeholders: { type: 'content-fragment', multiple: true },
+            collections: { type: 'content-fragment', multiple: true },
+            targetLocales: { type: 'text', multiple: true },
+            submissionDate: { type: 'date-time', multiple: false },
+            projectType: { type: 'enumeration', multiple: false },
+        };
+
+        const fields = sourceFragment.fields
+            .filter((field) => field.name !== 'submissionDate')
+            .map((field) => ({
+                name: field.name,
+                type: typeMap[field.name]?.type ?? field.type,
+                multiple: typeMap[field.name]?.multiple ?? field.multiple ?? false,
+                values: field.name === 'title' ? [title] : [...(field.values ?? [])],
+            }));
+
+        const fragmentPayload = {
+            name: normalizeKey(title),
+            parentPath: this.repository.getTranslationsPath(),
+            modelId: TRANSLATION_PROJECT_MODEL_ID,
+            title,
+            fields,
+        };
+
+        showToast('Duplicating project...');
+        try {
+            Store.translationProjects.list.loading.set(true);
+            const newProject = await this.repository.createFragment(fragmentPayload, false);
+            if (newProject) {
+                const newStore = new FragmentStore(newProject);
+                Store.translationProjects.list.data.set([newStore, ...this.translationProjectsData]);
+                showToast('Translation project duplicated successfully.', 'positive');
+            }
+        } catch (error) {
+            console.error('Error duplicating translation project:', error);
+            showToast('Failed to duplicate translation project.', 'negative');
+        } finally {
+            Store.translationProjects.list.loading.set(false);
+        }
+    };
+
     #formatSubmissionDate(translationProject) {
         const date = translationProject.get().getFieldValue('submissionDate');
         if (!date) return 'N/A';
@@ -307,6 +378,12 @@ class MasTranslation extends LitElement {
                     <div>${this.translationProjectsData.length} result(s)</div>
                 </div>
                 ${this.confirmDialog}
+                <mas-translation-duplicate-dialog
+                    .proposedTitle=${this.duplicateProposedTitle}
+                    .open=${this.duplicateDialogOpen}
+                    @duplicate-confirmed=${this.#onDuplicateConfirmed}
+                    @duplicate-cancelled=${this.#onDuplicateCancelled}
+                ></mas-translation-duplicate-dialog>
                 <div class="translation-content">${this.translationsProjectsContent}</div>
             </div>
         `;
