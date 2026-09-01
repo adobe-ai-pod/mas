@@ -166,10 +166,10 @@ merch-card[variant="product"] .merch-short-description {
     display: inline-block;
     align-items: center;
     gap: 4px;
-    font-size: 14px;
-    font-style: italic;
+    font-size: var(--consonant-merch-card-body-xs-font-size);
+    font-style: normal;
     font-weight: 400;
-    line-height: 21px;
+    line-height: var(--consonant-merch-card-body-xs-line-height);
 }
 
 merch-card[variant="product"] .merch-short-description .icon-button {
