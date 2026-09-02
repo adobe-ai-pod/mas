@@ -2123,6 +2123,24 @@ export default class MasFragmentEditor extends LitElement {
             return this.previewSkeleton;
         }
 
+        const variant = (this.fragmentStore?.previewStore?.value || this.fragment)?.getFieldValue('variant');
+        if (!variant) {
+            this.previewError = null;
+            return html`
+                <div id="preview-column">
+                    <div id="preview-wrapper">
+                        <div class="preview-content">
+                            <div class="preview-error-item">
+                                <sp-icon-alert class="price-error-icon"></sp-icon-alert>
+                                <span>Select a template first</span>
+                            </div>
+                            <p>Pick a template in the fragment editor to preview this card.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         const attrs = this.previewAttributes;
         const borderAttrs = this.previewBorderColorAttributes;
         const cssProps = this.previewCSSCustomProperties;

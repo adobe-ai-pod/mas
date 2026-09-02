@@ -1749,3 +1749,58 @@ describe('MasFragmentEditor – #preloadEditorModule', () => {
         expect(getSpy.calledWith('mas-compare-chart-editor')).to.be.false;
     });
 });
+
+describe('MasFragmentEditor – previewColumn no-template message', () => {
+    let sandbox;
+
+    beforeEach(() => {
+        sandbox = sinon.createSandbox();
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    function makeCardEditor(variantValue) {
+        const editor = new MasFragmentEditor();
+        const fragment = new Fragment({
+            id: 'card-id',
+            path: '/content/dam/mas/acom/en_US/test-card',
+            model: { path: CARD_MODEL_PATH },
+            fields: variantValue ? [{ name: 'variant', values: [variantValue] }] : [],
+            tags: [],
+        });
+        editor.inEdit.value = { get: () => fragment };
+        editor.previewResolved = true;
+        editor.previewError = null;
+        return { editor, fragment };
+    }
+
+    it('renders "Select a template first" message when card fragment has no variant', () => {
+        const { editor } = makeCardEditor(null);
+        const col = editor.previewColumn;
+        expect(col).to.not.equal(nothing);
+        const markup = col.strings.join('');
+        expect(markup).to.include('preview-column');
+        expect(markup).to.include('Select a template first');
+        expect(markup).to.include('Pick a template in the fragment editor to preview this card.');
+    });
+
+    it('does not render "Card failed to load" when card fragment has no variant', () => {
+        const { editor } = makeCardEditor(null);
+        editor.previewError = 'Card failed to load';
+        const col = editor.previewColumn;
+        const markup = col.strings.join('');
+        expect(markup).to.not.include('Card failed to load');
+    });
+
+    it('renders normal preview (not no-template message) when card fragment has a variant', () => {
+        const { editor } = makeCardEditor('plans');
+        const col = editor.previewColumn;
+        expect(col).to.not.equal(nothing);
+        const markup = col.strings.join('');
+        expect(markup).to.include('preview-column');
+        expect(markup).to.not.include('Select a template first');
+        expect(markup).to.not.include('Pick a template in the fragment editor to preview this card.');
+    });
+});

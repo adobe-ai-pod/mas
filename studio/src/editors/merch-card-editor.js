@@ -1061,6 +1061,7 @@ class MerchCardEditor extends LitElement {
         const form = this.getFormWithInheritance();
         const skeletonDisplay = this.fieldsReady ? 'none' : 'block';
         const formDisplay = this.fieldsReady ? 'block' : 'none';
+        const noVariantSelected = !this.getEffectiveFieldValue('variant');
         return html`
             <style>
                 /* Override styling using Spectrum's --mod-* tokens */
@@ -1244,6 +1245,7 @@ class MerchCardEditor extends LitElement {
                             data-field="variant"
                             data-field-state="${this.getFieldState('variant')}"
                             .value="${form.variant.values[0]}"
+                            ?invalid=${noVariantSelected}
                             @change="${this.#handleVariantChange}"
                         ></variant-picker>
                         ${this.renderFieldStatusIndicator('variant')}
