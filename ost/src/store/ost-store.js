@@ -604,8 +604,12 @@ export class OstStore extends EventTarget {
     // matching its resolved offer_type so "Use" enables without a manual click,
     // then reuse the searched OSI directly. Returns true when it selected one.
     // This is the single store-owned deep-link/search offer-selection path.
-    autoSelectByInitialOsi(offers) {
+    // May be called without arguments (uses store.offers) from the offer tab as
+    // a safeguard after the tab renders with offers already loaded.
+    autoSelectByInitialOsi(offers = this.offers) {
         if ((!this.initialOsi && !this.initialOfferId) || offers.length === 0) return false;
+        // No-op if an offer is already selected (manual or prior auto-select).
+        if (this.selectedOffer) return false;
         const attrs = this.initialOsiAttributes;
         let match;
         if (this.initialOfferId) {

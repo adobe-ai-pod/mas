@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { isOfferId, isOfferSelectorId } from '../utils/offer-utils.js';
 import { getOfferSelector, getOfferById } from '../utils/aos-client.js';
 import { store } from '../store/ost-store.js';
+import { filtersFromOsiAttributes } from '../utils/osi-filters.js';
 
 const TYPE_LABELS = {
     product: 'Product',
@@ -123,9 +124,15 @@ export class OstSearch extends LitElement {
                 // "Use" stays disabled until the new offer resolves.
                 store.initialOsi = osi;
                 store.clearSelectedOffer();
-                // Keep every filter at its "All" default: the resolved offer's
-                // attributes are stashed for autoSelectByInitialOsi instead of
-                // narrowing the visible filter pickers.
+                const osiAttrs = {
+                    product_arrangement_code: code,
+                    customer_segment: result.customer_segment,
+                    market_segments: result.market_segments,
+                    market_segment: result.market_segment,
+                    offer_type: result.offer_type,
+                    commitment: result.commitment,
+                    term: result.term,
+                };
                 store.initialOsiAttributes = {
                     customer_segment: result.customer_segment,
                     market_segment: Array.isArray(result.market_segments) ? result.market_segments[0] : result.market_segment,
@@ -133,13 +140,9 @@ export class OstSearch extends LitElement {
                     commitment: result.commitment,
                     term: result.term,
                 };
-                store.setAosParams({
-                    customerSegment: '',
-                    marketSegment: '',
-                    offerType: '',
-                    commitment: '',
-                    term: '',
-                });
+                // Pre-set filter pickers from OSI attributes so entitlements step
+                // shows the correct plan/segment/offer-type without user interaction.
+                store.setAosParams(filtersFromOsiAttributes(osiAttrs));
                 this.selectProductByCode(code);
                 // setOsi LAST: selectProductByCode → setProduct clears selectedOsi
                 // when the product changes, so set it after the product is chosen.
@@ -166,10 +169,16 @@ export class OstSearch extends LitElement {
             if (code) {
                 store.setSearch(code, 'product');
                 store.clearSelectedOffer();
-                // Keep every filter at its "All" default: the resolved offer's
-                // attributes are stashed for autoSelectByInitialOsi instead of
-                // narrowing the visible filter pickers to stale values.
                 store.initialOfferId = offer.offer_id;
+                const offerAttrs = {
+                    product_arrangement_code: code,
+                    customer_segment: offer.customer_segment,
+                    market_segments: offer.market_segments,
+                    market_segment: offer.market_segment,
+                    offer_type: offer.offer_type,
+                    commitment: offer.commitment,
+                    term: offer.term,
+                };
                 store.initialOsiAttributes = {
                     customer_segment: offer.customer_segment,
                     market_segment: Array.isArray(offer.market_segments) ? offer.market_segments[0] : offer.market_segment,
@@ -177,13 +186,8 @@ export class OstSearch extends LitElement {
                     commitment: offer.commitment,
                     term: offer.term,
                 };
-                store.setAosParams({
-                    customerSegment: '',
-                    marketSegment: '',
-                    offerType: '',
-                    commitment: '',
-                    term: '',
-                });
+                // Pre-set filter pickers from offer attributes.
+                store.setAosParams(filtersFromOsiAttributes(offerAttrs));
                 this.selectProductByCode(code);
             }
         } catch {

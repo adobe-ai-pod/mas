@@ -47,6 +47,10 @@ export default class OSTNewPage {
         this.offerDetailFocused = this.page.locator('ost-offer-detail-focused');
         // Offer cards in the offer-step left column (bordered `card` layout).
         this.offerCard = this.page.locator('ost-offer-card[card]');
+        // The currently-selected product card (rendered with the [selected] attribute).
+        this.selectedProductCard = this.page.locator('[data-testid="ost-product-card"][selected]');
+        // The currently-selected offer card on the offer step.
+        this.selectedOfferCard = this.page.locator('ost-offer-card[card][selected]');
 
         // Placeholder type rows. The new (legacy-style) model lists every type
         // as its own always-visible row — there are no chips/tabs to activate.
@@ -131,6 +135,13 @@ export default class OSTNewPage {
         this.promoField = this.page.locator('[data-testid="ost-promo-override-input"] input');
         this.promoLabel = this.page.locator('[data-testid="ost-promo-label"]');
         this.cancelPromo = this.page.locator('[data-testid="ost-promo-clear"]');
+    }
+
+    // Type an OSI into the search field and wait for a selected product card to
+    // appear (the OSI resolution auto-selects the matching product).
+    async searchByOsi(osi) {
+        await this.searchField.fill(osi);
+        await this.selectedProductCard.waitFor({ state: 'visible', timeout: 15000 });
     }
 
     // On the offer step, select the first offer card. The placeholder panel

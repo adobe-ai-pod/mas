@@ -101,6 +101,11 @@ export class OstOfferTab extends LitElement {
     }
 
     handleStoreChange() {
+        // When offers load after an OSI search and no offer is selected yet,
+        // try to auto-select the offer matching the OSI before rendering.
+        if (store.wizardStep === 'offer' && store.offers.length > 0 && !store.selectedOffer) {
+            store.autoSelectByInitialOsi();
+        }
         this.requestUpdate();
     }
 
