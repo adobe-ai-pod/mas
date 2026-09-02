@@ -256,6 +256,55 @@ describe('ost-product-list', () => {
         expect(store.aosParams.customerSegment).to.equal('TEAM');
     });
 
+    it('OSI-selected product card renders with [selected] even when a narrowing segment filter is active', async () => {
+        // Photoshop supports both INDIVIDUAL and TEAM; Illustrator only INDIVIDUAL.
+        // Setting customerSegment=TEAM would normally exclude Illustrator, but the
+        // OSI arrangementCode pins Illustrator so its card must still appear selected.
+        store.aosParams = {
+            ...store.aosParams,
+            arrangementCode: 'ilst',
+            customerSegment: 'TEAM',
+        };
+        const el = await fixture(html`<ost-product-list></ost-product-list>`);
+        const selected = el.shadowRoot.querySelector('.product-card[selected]');
+        expect(selected).to.exist;
+        expect(selected.querySelector('.product-name').textContent).to.equal('Illustrator');
+    });
+
+    it('OSI-selected product remains in the filtered list even when segment filter excludes it', async () => {
+        store.aosParams = {
+            ...store.aosParams,
+            arrangementCode: 'ilst',
+            customerSegment: 'TEAM',
+        };
+        const el = await fixture(html`<ost-product-list></ost-product-list>`);
+        const names = Array.from(el.shadowRoot.querySelectorAll('.product-name')).map((n) => n.textContent);
+        expect(names).to.include('Illustrator');
+    });
+
+    it('renders an active filter tag for each OSI-derived filter including plan type', async () => {
+        store.aosParams = {
+            ...store.aosParams,
+            customerSegment: 'INDIVIDUAL',
+            marketSegment: 'COM',
+            offerType: 'BASE',
+            commitment: 'YEAR',
+            term: 'MONTHLY',
+        };
+        const el = await fixture(html`<ost-filter-bar></ost-filter-bar>`);
+
+        const labels = Array.from(el.shadowRoot.querySelectorAll('.tag')).map((t) =>
+            t.textContent.trim().replace(/\s*×$/, '').trim(),
+        );
+
+        expect(labels).to.include('Individual');
+        expect(labels).to.include('Commercial');
+        expect(labels).to.include('Base');
+        expect(labels).to.include('ABM');
+        const count = el.shadowRoot.querySelector('.filter-count');
+        expect(count.textContent.trim()).to.equal('4');
+    });
+
     it('clearing the customer-segment tag re-includes the specific previously filtered product', async () => {
         store.aosParams = { ...store.aosParams, customerSegment: 'TEAM' };
         const list = await fixture(html`<ost-product-list></ost-product-list>`);

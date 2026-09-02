@@ -191,6 +191,8 @@ export class OstProductList extends LitElement {
             }
         }
 
+        const osiCode = store.aosParams.arrangementCode || '';
+
         return products
             .map((entry) => {
                 // Handle both [code, product] tuples and flat product objects
@@ -203,6 +205,10 @@ export class OstProductList extends LitElement {
                 const customerSegments = product.customerSegments || {};
                 const marketSegments = product.marketSegments || {};
                 const draft = product.draft || false;
+
+                // Always keep the OSI-selected product so its card can render
+                // [selected] even when segment filters would otherwise exclude it.
+                if (osiCode && code === osiCode) return true;
 
                 return offerFilter(criteria, store.landscape, store.aosParams, {
                     customerSegments,

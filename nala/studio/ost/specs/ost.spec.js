@@ -17,6 +17,16 @@ export default {
                     osi: 'r_JXAnlFI7xD6FxWKl2ODvZriLYBoSL701Kd1hRyhe8',
                 },
                 expectedProduct: 'Photoshop',
+                // OSI auto-select: typing the OSI should pre-set these picker values
+                // and auto-select both the product card and the offer on step 2.
+                osiAutoSelect: {
+                    osi: 'r_JXAnlFI7xD6FxWKl2ODvZriLYBoSL701Kd1hRyhe8',
+                    expectedProduct: 'Photoshop',
+                    expectedPlanType: 'YEAR-MONTHLY',
+                    expectedCustomerSegment: 'INDIVIDUAL',
+                    expectedMarketSegment: 'COM',
+                    expectedOfferType: 'BASE',
+                },
             },
             tags: '@mas-studio @ost @ost-e2e',
         },
@@ -30,6 +40,16 @@ export default {
                     offerType: 'BASE',
                     customerSegment: 'INDIVIDUAL',
                     marketSegment: 'COM',
+                },
+                // OSI scenario: searching this OSI should auto-set filters and
+                // pre-select both the matching product card and the offer on step 2.
+                osiScenario: {
+                    osi: 'r_JXAnlFI7xD6FxWKl2ODvZriLYBoSL701Kd1hRyhe8',
+                    expectedProduct: 'Photoshop',
+                    expectedPlanType: 'YEAR-MONTHLY',
+                    expectedCustomerSegment: 'INDIVIDUAL',
+                    expectedMarketSegment: 'COM',
+                    expectsSelectedOffer: true,
                 },
             },
             tags: '@mas-studio @ost @ost-e2e',
