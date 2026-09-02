@@ -1383,6 +1383,80 @@
                         });
                     });
 
+                    describe('variant-picker error state in merch-card-editor', () => {
+                        it('variant-picker is in error state when fragment has no variant', async () => {
+                            const noVariantData = {
+                                ...baseMockData,
+                                path: '/content/dam/mas/nala/en_US/test-no-variant',
+                                id: 'test-no-variant-id',
+                                fields: baseMockData.fields.map((field) => {
+                                    if (field.name === 'variant') return { ...field, values: [] };
+                                    return { ...field, values: [] };
+                                }),
+                            };
+                            const noVariantFragment = new Fragment(structuredClone(noVariantData));
+                            const noVariantStore = generateFragmentStore(noVariantFragment);
+
+                            Store.fragmentEditor.fragmentId.set('test-no-variant-id');
+                            Store.fragments.inEdit.set(noVariantStore);
+                            Store.fragments.list.data.set([noVariantStore]);
+
+                            const container = document.createElement('div');
+                            const noVariantEditor = document.createElement('merch-card-editor');
+                            noVariantEditor.fragmentStore = noVariantStore;
+                            noVariantEditor.updateFragment = () => {};
+                            noVariantEditor.localeDefaultFragment = null;
+                            noVariantEditor.isVariation = false;
+                            noVariantEditor.fieldsReady = true;
+                            container.appendChild(noVariantEditor);
+                            spTheme.appendChild(container);
+
+                            await noVariantEditor.updateComplete;
+
+                            const picker = noVariantEditor.querySelector('variant-picker');
+                            expect(picker).to.exist;
+                            expect(picker.invalid).to.be.true;
+
+                            container.remove();
+                        });
+
+                        it('variant-picker is not in error state when fragment has a variant', async () => {
+                            const withVariantData = {
+                                ...baseMockData,
+                                path: '/content/dam/mas/nala/en_US/test-with-variant',
+                                id: 'test-with-variant-id',
+                                fields: baseMockData.fields.map((field) => {
+                                    if (field.name === 'variant') return { ...field, values: ['plans'] };
+                                    return { ...field, values: [] };
+                                }),
+                            };
+                            const withVariantFragment = new Fragment(structuredClone(withVariantData));
+                            const withVariantStore = generateFragmentStore(withVariantFragment);
+
+                            Store.fragmentEditor.fragmentId.set('test-with-variant-id');
+                            Store.fragments.inEdit.set(withVariantStore);
+                            Store.fragments.list.data.set([withVariantStore]);
+
+                            const container = document.createElement('div');
+                            const withVariantEditor = document.createElement('merch-card-editor');
+                            withVariantEditor.fragmentStore = withVariantStore;
+                            withVariantEditor.updateFragment = () => {};
+                            withVariantEditor.localeDefaultFragment = null;
+                            withVariantEditor.isVariation = false;
+                            withVariantEditor.fieldsReady = true;
+                            container.appendChild(withVariantEditor);
+                            spTheme.appendChild(container);
+
+                            await withVariantEditor.updateComplete;
+
+                            const picker = withVariantEditor.querySelector('variant-picker');
+                            expect(picker).to.exist;
+                            expect(picker.invalid).to.be.false;
+
+                            container.remove();
+                        });
+                    });
+
                     describe('loc-ready metadata toggle', () => {
                         it('renders fragment-locready-group in General info, not the old #locReady group', async () => {
                             const { editor } = await setupTestEnvironment({}, 'locready-render');

@@ -1,4 +1,4 @@
-import { html, LitElement, css } from 'lit';
+import { html, LitElement, css, nothing } from 'lit';
 import { SURFACES } from '../constants.js';
 
 export const VARIANT_NAMES = {
@@ -186,6 +186,16 @@ class VariantPicker extends LitElement {
             --mod-picker-border-color-default: var(--spectrum-blue-400);
             --mod-picker-background-color-default: var(--spectrum-blue-100);
         }
+
+        :host([invalid]) sp-picker {
+            --mod-picker-border-color-default: var(--spectrum-red-600);
+        }
+
+        .help-text-negative {
+            font-size: 12px;
+            color: var(--spectrum-red-600);
+            margin-top: 4px;
+        }
     `;
 
     static properties = {
@@ -193,6 +203,7 @@ class VariantPicker extends LitElement {
         defaultValue: { type: String, attribute: 'default-value' },
         showAll: { type: Boolean, attribute: 'show-all' },
         disabled: { type: Boolean, attribute: 'disabled' },
+        invalid: { type: Boolean, reflect: true },
     };
 
     get variants() {
@@ -206,16 +217,19 @@ class VariantPicker extends LitElement {
     }
 
     render() {
+        const isInvalid = !this.value;
         return html`<sp-picker
-            label="Card Template"
-            size="m"
-            value=${this.value ?? this.defaultValue}
-            .value=${this.value ?? this.defaultValue}
-            ?disabled=${this.disabled}
-            @change=${this.#handleChange}
-        >
-            ${this.variants}
-        </sp-picker>`;
+                label="Card Template"
+                size="m"
+                value=${this.value ?? this.defaultValue}
+                .value=${this.value ?? this.defaultValue}
+                ?disabled=${this.disabled}
+                ?invalid=${isInvalid}
+                @change=${this.#handleChange}
+            >
+                ${this.variants}
+            </sp-picker>
+            ${isInvalid ? html`<div class="help-text-negative">Select a template first</div>` : nothing}`;
     }
 }
 
