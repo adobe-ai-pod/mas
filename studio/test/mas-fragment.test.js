@@ -106,6 +106,66 @@ describe('MasFragment', () => {
         });
     });
 
+    describe('single click selects', () => {
+        it('toggles the fragment id into Store.selection on single click', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="render"></mas-fragment>`);
+            const target = el.querySelector('mas-fragment-render');
+            target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, detail: 1 }));
+            await new Promise((r) => setTimeout(r, 250));
+            expect(Store.selection.get()).to.deep.equal(['fragment-1']);
+        });
+
+        it('removes the fragment id on a second single click (toggle)', async () => {
+            const fragmentStore = createFragmentStore();
+            Store.selection.set(['fragment-1']);
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="render"></mas-fragment>`);
+            const target = el.querySelector('mas-fragment-render');
+            target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, detail: 1 }));
+            await new Promise((r) => setTimeout(r, 250));
+            expect(Store.selection.get()).to.deep.equal([]);
+        });
+
+        it('does not toggle selection when clicking an interactive control', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="render"></mas-fragment>`);
+            const target = el.querySelector('mas-fragment-render');
+            const expandButton = document.createElement('button');
+            expandButton.className = 'expand-button';
+            target.appendChild(expandButton);
+            expandButton.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, detail: 1 }));
+            await new Promise((r) => setTimeout(r, 250));
+            expect(Store.selection.get()).to.deep.equal([]);
+        });
+
+        it('does not toggle parent fragment when click originates from a nested mas-fragment-table', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="table"></mas-fragment>`);
+            const nestedTable = document.createElement('mas-fragment-table');
+            el.appendChild(nestedTable);
+            nestedTable.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, detail: 1 }));
+            await new Promise((r) => setTimeout(r, 250));
+            expect(Store.selection.get()).to.deep.equal([]);
+        });
+
+        it('double-click opens the editor without toggling selection', async () => {
+            const fragmentStore = createFragmentStore();
+            const el = await fixture(html`<mas-fragment .fragmentStore=${fragmentStore} view="render"></mas-fragment>`);
+            const routerModule = await import('../src/router.js');
+            const navigateSpy = sandbox.stub(routerModule.default, 'navigateToFragmentEditor').resolves();
+            const target = el.querySelector('mas-fragment-render');
+
+            // Simulate browser sequence: click(detail=1), click(detail=2), dblclick
+            target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, detail: 1 }));
+            target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, detail: 2 }));
+            target.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, detail: 2 }));
+            await new Promise((r) => setTimeout(r, 250));
+
+            expect(navigateSpy.calledOnce).to.be.true;
+            expect(Store.selection.get()).to.deep.equal([]);
+        });
+    });
+
     describe('view rendering', () => {
         it('renders table view when view="table"', async () => {
             const fragmentStore = createFragmentStore();
