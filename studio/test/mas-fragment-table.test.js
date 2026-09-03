@@ -394,5 +394,30 @@ describe('MasFragmentTable', () => {
             el.handleNestedRowClick({ composedPath: () => [titleCell] });
             expect(Store.selection.get()).to.deep.equal(['grouped-1']);
         });
+
+        it('stops propagation after toggling nested row selection', async () => {
+            Store.selecting.set(true);
+            const fragmentStore = createFragmentStore({ id: 'nested-1', locale: 'en_CA' });
+            const el = await fixture(
+                html`<mas-fragment-table .fragmentStore=${fragmentStore} .nested=${true}></mas-fragment-table>`,
+            );
+            await el.updateComplete;
+
+            const parent = document.createElement('div');
+            el.parentNode.insertBefore(parent, el);
+            parent.appendChild(el);
+            let propagated = false;
+            parent.addEventListener('click', () => {
+                propagated = true;
+            });
+
+            const titleCell = el.querySelector('sp-table-cell.title');
+            const event = new MouseEvent('click', { bubbles: true, composed: true });
+            Object.defineProperty(event, 'composedPath', { value: () => [titleCell, el] });
+            el.handleNestedRowClick(event);
+
+            expect(Store.selection.get()).to.deep.equal(['nested-1']);
+            expect(propagated).to.be.false;
+        });
     });
 });

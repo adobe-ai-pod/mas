@@ -191,6 +191,7 @@ class MasFragmentTable extends LitElement {
         if (!this.nested || !Store.selecting.get()) return;
         if (shouldIgnoreRowClickForSelection(event)) return;
         toggleSelection(this.fragmentStore.value.id);
+        event.stopPropagation();
     }
 
     getTruncatedOfferId() {

@@ -3,7 +3,8 @@ import './mas-fragment-render.js';
 import './mas-fragment-table.js';
 import './mas-fragment-variations.js';
 import { ReactiveStore } from './reactivity/reactive-store.js';
-import Store from './store.js';
+import Store, { toggleSelection } from './store.js';
+import { shouldIgnoreRowClickForSelection } from './common/utils/render-utils.js';
 import router from './router.js';
 import { styles } from './mas-fragment.css.js';
 import { MasRepository } from './mas-repository.js';
@@ -11,6 +12,7 @@ import { showToast } from './utils.js';
 import ReactiveController from './reactivity/reactive-controller.js';
 
 const tooltipTimeout = new ReactiveStore(null);
+let pendingSelectionTimer = null;
 
 class MasFragment extends LitElement {
     static properties = {
@@ -81,14 +83,41 @@ class MasFragment extends LitElement {
     }
 
     handleClick(event) {
-        if (Store.selecting.value) return;
-        clearTimeout(tooltipTimeout.get());
-        const currentTarget = event.currentTarget;
-        tooltipTimeout.set(
-            setTimeout(() => {
-                currentTarget.classList.add('has-tooltip');
-            }, 500),
-        );
+        // Ignore the second click of a double-click; edit() handles dblclick
+        if (event.detail > 1) return;
+        // Don't toggle selection when clicking interactive controls
+        if (shouldIgnoreRowClickForSelection(event)) return;
+        // Don't toggle the parent when a nested variation row click bubbles up
+        if (
+            event
+                .composedPath()
+                .some(
+                    (node) =>
+                        node !== event.currentTarget &&
+                        node instanceof Element &&
+                        (node.tagName === 'MAS-FRAGMENT-TABLE' || node.tagName === 'MAS-FRAGMENT-VARIATIONS'),
+                )
+        )
+            return;
+
+        clearTimeout(pendingSelectionTimer);
+        const id = this.fragmentStore.value?.id;
+        if (!id) return;
+        // Defer toggle so a double-click's edit() can cancel it first
+        pendingSelectionTimer = setTimeout(() => {
+            toggleSelection(id);
+        }, 200);
+
+        // Tooltip logic (only shown while not in selection mode)
+        if (!Store.selecting.value) {
+            clearTimeout(tooltipTimeout.get());
+            const currentTarget = event.currentTarget;
+            tooltipTimeout.set(
+                setTimeout(() => {
+                    currentTarget.classList.add('has-tooltip');
+                }, 500),
+            );
+        }
     }
 
     async toggleExpand(e) {
@@ -124,6 +153,12 @@ class MasFragment extends LitElement {
         }
     }
 
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        clearTimeout(pendingSelectionTimer);
+        clearTimeout(tooltipTimeout.get());
+    }
+
     handleMouseLeave(event) {
         if (Store.selecting.value) return;
         clearTimeout(tooltipTimeout.get());
@@ -132,6 +167,8 @@ class MasFragment extends LitElement {
 
     async edit(event) {
         if (Store.selecting.value) return;
+        // Cancel pending selection toggle from the preceding single click
+        clearTimeout(pendingSelectionTimer);
         // Remove tooltip
         clearTimeout(tooltipTimeout.get());
         event.currentTarget.classList.remove('has-tooltip');
@@ -171,7 +208,9 @@ class MasFragment extends LitElement {
                     @mouseleave=${this.handleMouseLeave}
                     @dblclick=${this.edit}
                 ></mas-fragment-table
-                ><sp-tooltip slot="hover-content" placement="top">Double click the card to start editing.</sp-tooltip>
+                ><sp-tooltip slot="hover-content" placement="top"
+                    >Single click to select. Double click to open the editor.</sp-tooltip
+                >
             </overlay-trigger>
             ${this.expanded
                 ? html`<mas-fragment-variations
