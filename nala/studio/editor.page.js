@@ -32,6 +32,11 @@ export default class EditorPage {
         this.rteIconEditorInput = this.panel.locator('rte-icon-editor input[type="text"]');
         this.rteIconEditorSaveBtn = this.panel.locator('rte-icon-editor #saveButton');
 
+        this.cardNameFieldGroup = this.panel.locator('sp-field-group#cardName');
+        this.cardNameLabel = this.cardNameFieldGroup.locator('sp-field-label[for="card-name"]');
+        this.cardName = this.cardNameFieldGroup.locator('sp-textfield#card-name');
+        this.cardNameInput = this.cardName.locator('input');
+
         this.descriptionFieldGroup = this.panel.locator('sp-field-group#description');
         this.description = this.panel.locator('sp-field-group#description div[contenteditable="true"]');
 
