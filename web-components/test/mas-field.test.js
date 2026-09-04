@@ -341,6 +341,38 @@ describe('mas-field – non-checkout and link-style CTAs', () => {
     });
 });
 
+describe('mas-field – aria-label on commerce CTAs', () => {
+    afterEach(() => {
+        document.body
+            .querySelectorAll('mas-field')
+            .forEach((el) => el.remove());
+    });
+
+    it('copies an authored aria-label onto the checkout element', () => {
+        const el = makeField(
+            'ctas',
+            '<a data-wcs-osi="ABC123" aria-label="Buy Acrobat Pro now">Buy now</a>',
+        );
+        const link = el.querySelector('[slot="footer"] a');
+        expect(link.getAttribute('aria-label')).to.equal('Buy Acrobat Pro now');
+    });
+
+    it('does not copy a whitespace-only aria-label onto the checkout element', () => {
+        const el = makeField(
+            'ctas',
+            '<a data-wcs-osi="ABC123" aria-label="   ">Buy now</a>',
+        );
+        const link = el.querySelector('[slot="footer"] a');
+        expect(link.hasAttribute('aria-label')).to.be.false;
+    });
+
+    it('leaves the checkout element without aria-label when none is authored', () => {
+        const el = makeField('ctas', CTA_HTML);
+        const link = el.querySelector('[slot="footer"] a');
+        expect(link.hasAttribute('aria-label')).to.be.false;
+    });
+});
+
 describe('mas-field – lifecycle', () => {
     afterEach(() => {
         document.body
