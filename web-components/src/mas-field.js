@@ -6,6 +6,7 @@ import {
 } from './constants.js';
 import { getService, shouldHideStPriceLabels } from './utils.js';
 import { COMPAT_VERSION_GLOBAL_PROMO_CODE } from './compat-version.js';
+import { hasAuthoredAriaLabel } from './aria-label-utils.js';
 
 const MAS_FIELD_TAG = 'mas-field';
 const CHECKOUT_STYLE_PATTERN = /(accent|primary|secondary)(-(outline|link))?/;
@@ -316,6 +317,7 @@ class MasField extends HTMLElement {
 
         for (const { name, value } of link.attributes) {
             if (['class', 'is', 'href'].includes(name)) continue;
+            if (name === 'aria-label' && !hasAuthoredAriaLabel(value)) continue;
             button.setAttribute(name, value);
         }
         button.firstElementChild?.classList.add('spectrum-Button-label');

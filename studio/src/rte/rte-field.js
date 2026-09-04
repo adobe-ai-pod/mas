@@ -11,6 +11,7 @@ import { openOfferSelectorTool, attributeFilter, closeOfferSelectorTool } from '
 import prosemirrorStyles from './prosemirror.css.js';
 import { EVENT_OST_SELECT } from '../constants.js';
 import throttle from '../utils/throttle.js';
+import { hasAuthoredAriaLabel } from '../../../web-components/src/aria-label-utils.js';
 import './rte-mnemonic-editor.js';
 import './rte-link-editor.js';
 import './rte-icon-editor.js';
@@ -1156,11 +1157,14 @@ class RteField extends LitElement {
     #collectDataAttributes(dom) {
         const attrs = {};
         for (const name of dom.getAttributeNames()) {
-            if (attributeFilter(name) || name === 'src' || name === 'alt' || name === 'size') {
+            if (attributeFilter(name) || name === 'src' || name === 'alt' || name === 'size' || name === 'aria-label') {
                 const value = dom.getAttribute(name);
                 if (value === null) continue;
                 attrs[name] = value;
             }
+        }
+        if (!hasAuthoredAriaLabel(attrs['aria-label'])) {
+            delete attrs['aria-label'];
         }
         return attrs;
     }
@@ -1205,6 +1209,12 @@ class RteField extends LitElement {
 
         // Set attributes
         for (const [key, value] of Object.entries(node.attrs)) {
+            if (key === 'aria-label') {
+                if (hasAuthoredAriaLabel(value)) {
+                    element.setAttribute(key, value);
+                }
+                continue;
+            }
             if (value) {
                 element.setAttribute(key, value);
             }

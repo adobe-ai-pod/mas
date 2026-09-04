@@ -1,5 +1,11 @@
 import { createCheckoutElement } from './checkout-mixin.js';
 import { CheckoutMixin } from './checkout-mixin.js';
+import {
+    hasAuthoredAriaLabel,
+    applyDerivedAriaLabel,
+} from './aria-label-utils.js';
+
+export { hasAuthoredAriaLabel, applyDerivedAriaLabel };
 
 export class CheckoutLink extends CheckoutMixin(HTMLAnchorElement) {
     static is = 'checkout-link';
@@ -22,6 +28,19 @@ export class CheckoutLink extends CheckoutMixin(HTMLAnchorElement) {
             this.checkoutActionHandler?.(e);
             return;
         }
+    }
+
+    /**
+     * Re-resolution (price/offer updates, locale switches) never mutates
+     * aria-label itself, but this gate guarantees it: an authored aria-label
+     * always wins over anything derived here, and derivation never emits an
+     * empty aria-label attribute.
+     */
+    renderOffers(...args) {
+        const authoredAriaLabel = this.getAttribute('aria-label');
+        const result = super.renderOffers(...args);
+        applyDerivedAriaLabel(this, authoredAriaLabel);
+        return result;
     }
 }
 

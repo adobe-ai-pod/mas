@@ -380,6 +380,58 @@
                         const a = firstLink();
                         expect(a.classList.value).to.equal('upt-link primary-link');
                     });
+
+                    it('should save an authored aria-label via the link editor and keep it after re-parsing', async function () {
+                        rte = await createFromTemplate('rte-link', this.test.title);
+                        rte.selectLink(1);
+                        await delay(100);
+                        await openLinkEditor(rte);
+                        rte.linkEditorElement.ariaLabel = 'Adobe home';
+                        rte.linkEditorElement.requestUpdate();
+                        await rte.linkEditorElement.updateComplete;
+                        clickSave(rte);
+                        await delay(100);
+                        expect(firstLink().getAttribute('aria-label')).to.equal('Adobe home');
+
+                        // Re-parsing the serialized value (as Studio does when re-applying
+                        // persisted content) must not drop the authored aria-label.
+                        rte.updateContent(rte.value);
+                        await delay(100);
+                        expect(firstLink().getAttribute('aria-label')).to.equal('Adobe home');
+                    });
+                });
+
+                describe('RTE Field: aria-label serialization', () => {
+                    it('preserves an authored aria-label through an external value round-trip', async function () {
+                        const rte = await createFromTemplate('rte-link', this.test.title);
+                        const html =
+                            '<p><a class="accent" data-key="ariakey01" data-checkout-workflow="UCv3" data-wcs-osi="abm" aria-label="Buy Acrobat Pro now">Buy now</a></p>';
+                        rte.updateContent(html);
+                        await delay(100);
+                        expect(rte.value).to.equal(html);
+                    });
+
+                    it('treats a whitespace-only aria-label as not authored', async function () {
+                        const rte = await createFromTemplate('rte-link', this.test.title);
+                        rte.updateContent(
+                            '<p><a class="accent" data-key="ariakey02" data-checkout-workflow="UCv3" data-wcs-osi="abm" aria-label="   ">Buy now</a></p>',
+                        );
+                        await delay(100);
+                        expect(rte.value).to.not.include('aria-label');
+                    });
+
+                    it('keeps aria-label identical across two consecutive external updates', async function () {
+                        const rte = await createFromTemplate('rte-link', this.test.title);
+                        const html =
+                            '<p><a class="accent" data-key="ariakey03" data-checkout-workflow="UCv3" data-wcs-osi="abm" aria-label="Buy Acrobat Pro now">Buy now</a></p>';
+                        rte.updateContent(html);
+                        await delay(100);
+                        const firstPass = rte.value;
+                        rte.updateContent(firstPass);
+                        await delay(100);
+                        expect(rte.value).to.equal(firstPass);
+                        expect(rte.value).to.equal(html);
+                    });
                 });
 
                 // Theses are not very stable in headless chrome. Enable them for localing.
