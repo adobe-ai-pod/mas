@@ -178,6 +178,93 @@ runTests(async () => {
             expect(plansVariantSheet).to.not.equal(segmentVariantSheet);
         });
 
+        function findPrintSheet(sheets) {
+            return sheets.find((sheet) =>
+                [...sheet.cssRules].some((rule) =>
+                    rule.media?.mediaText?.includes('print'),
+                ),
+            );
+        }
+
+        it('should adopt a shared print stylesheet into shadowRoot.adoptedStyleSheets', async () => {
+            const plansCard = document.querySelector(
+                'merch-card[variant="plans"]',
+            );
+            const printSheet = findPrintSheet(
+                plansCard.shadowRoot.adoptedStyleSheets,
+            );
+            expect(printSheet).to.exist;
+        });
+
+        it('should share the identical print stylesheet instance across cards of the same variant', async () => {
+            const plansCards = document.querySelectorAll(
+                'merch-card[variant="plans"]',
+            );
+            expect(plansCards.length).to.be.greaterThan(1);
+            const printSheet1 = findPrintSheet(
+                plansCards[0].shadowRoot.adoptedStyleSheets,
+            );
+            const printSheet2 = findPrintSheet(
+                plansCards[1].shadowRoot.adoptedStyleSheets,
+            );
+            expect(printSheet1).to.equal(printSheet2);
+        });
+
+        it('should share the identical print stylesheet instance across cards of different variants', async () => {
+            const plansCard = document.querySelector(
+                'merch-card[variant="plans"]',
+            );
+            const segmentCard = document.querySelector(
+                'merch-card[variant="segment"]',
+            );
+            const printSheet1 = findPrintSheet(
+                plansCard.shadowRoot.adoptedStyleSheets,
+            );
+            const printSheet2 = findPrintSheet(
+                segmentCard.shadowRoot.adoptedStyleSheets,
+            );
+            expect(printSheet1).to.exist;
+            expect(printSheet1).to.equal(printSheet2);
+        });
+
+        it('should keep exactly one print stylesheet after the variant attribute changes', async () => {
+            const plansCard = document.querySelector(
+                'merch-card[variant="plans"]',
+            );
+            plansCard.setAttribute('variant', 'segment');
+            await plansCard.updateComplete;
+            const printSheets = plansCard.shadowRoot.adoptedStyleSheets.filter(
+                (sheet) =>
+                    [...sheet.cssRules].some((rule) =>
+                        rule.media?.mediaText?.includes('print'),
+                    ),
+            );
+            expect(printSheets.length).to.equal(1);
+            plansCard.setAttribute('variant', 'plans');
+            await plansCard.updateComplete;
+        });
+
+        it('should include the shared print stylesheet on a card created and appended after module load', async () => {
+            const plansCard = document.querySelector(
+                'merch-card[variant="plans"]',
+            );
+            const existingPrintSheet = findPrintSheet(
+                plansCard.shadowRoot.adoptedStyleSheets,
+            );
+
+            const lateCard = document.createElement('merch-card');
+            lateCard.setAttribute('variant', 'plans');
+            document.body.appendChild(lateCard);
+            await lateCard.updateComplete;
+
+            const latePrintSheet = findPrintSheet(
+                lateCard.shadowRoot.adoptedStyleSheets,
+            );
+            expect(latePrintSheet).to.exist;
+            expect(latePrintSheet).to.equal(existingPrintSheet);
+            lateCard.remove();
+        });
+
         it('should have variantLayout property set on card', async () => {
             const plansCard = document.querySelector(
                 'merch-card[variant="plans"]',

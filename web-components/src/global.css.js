@@ -1109,5 +1109,13 @@ merch-card[border-color="spectrum-red-700-plans"] {
     }
 }
 
+@media print {
+    header,
+    nav,
+    footer {
+        display: none !important;
+    }
+}
+
 `;
 document.head.appendChild(styles);

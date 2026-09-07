@@ -1,5 +1,6 @@
 import { LitElement } from 'lit';
 import { sizeStyles, styles } from './merch-card.css.js';
+import { printStyles } from './print.css.js';
 import './merch-icon.js';
 import './merch-gradient.js';
 import './merch-addon.js';
@@ -242,7 +243,7 @@ export class MerchCard extends LitElement {
         priceLiterals: { type: Object },
     };
 
-    static styles = [styles, ...sizeStyles()];
+    static styles = [styles, ...sizeStyles(), printStyles];
 
     static registerVariant = registerVariant;
 
