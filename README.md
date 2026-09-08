@@ -1,6 +1,7 @@
 # Merch At Scale
 
 This project is a library of web components providing merchandising content to various surfaces.
+In practical terms, this repository is the shared home of those components, so Adobe web surfaces can embed things like offers and prices without each one building that content from scratch.
 
 ## Environments
 
