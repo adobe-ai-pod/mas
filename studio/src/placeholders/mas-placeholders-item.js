@@ -4,6 +4,7 @@ import Store from '../store.js';
 import ReactiveController from '../reactivity/reactive-controller.js';
 import { MasRepository } from '../mas-repository.js';
 import { removeFromIndexFragment, publishPlaceholder } from './mas-placeholders-repository.js';
+import { copyPlaceholderCopyCodeUrls } from './placeholder-copy-code.js';
 import { confirmation } from '../mas-confirm-dialog.js';
 import { showToast } from '../utils.js';
 import { FragmentStore } from '../reactivity/fragment-store.js';
@@ -130,6 +131,11 @@ class MasPlaceholdersItem extends LitElement {
             };
             this.placeholderStore.refreshFrom(updatedPlaceholder);
         }
+    }
+
+    async onCopyCode(event) {
+        this.toggleDropdown(this.placeholder.key, event);
+        await copyPlaceholderCopyCodeUrls(this.placeholder);
     }
 
     preventSelection(event) {
@@ -299,6 +305,10 @@ class MasPlaceholdersItem extends LitElement {
                                       >
                                           <sp-icon-publish size="m"></sp-icon-publish>
                                           <span>Publish</span>
+                                      </div>
+                                      <div class="dropdown-item" @click="${this.onCopyCode}">
+                                          <sp-icon-copy size="m"></sp-icon-copy>
+                                          <span>Copy code</span>
                                       </div>
                                       <div class="dropdown-item" @click="${this.onDelete}">
                                           <sp-icon-delete size="m"></sp-icon-delete>
